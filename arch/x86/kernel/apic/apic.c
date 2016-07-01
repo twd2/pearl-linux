@@ -56,6 +56,70 @@
 #include <asm/tsc.h>
 #include <asm/hypervisor.h>
 
+#include <linux/context_tracking.h>
+#include <linux/interrupt.h>
+#include <linux/kallsyms.h>
+#include <linux/spinlock.h>
+#include <linux/kprobes.h>
+#include <linux/uaccess.h>
+#include <linux/kdebug.h>
+#include <linux/kgdb.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/ptrace.h>
+#include <linux/uprobes.h>
+#include <linux/string.h>
+#include <linux/delay.h>
+#include <linux/errno.h>
+#include <linux/kexec.h>
+#include <linux/sched.h>
+#include <linux/timer.h>
+#include <linux/init.h>
+#include <linux/bug.h>
+#include <linux/nmi.h>
+#include <linux/mm.h>
+#include <linux/smp.h>
+#include <linux/io.h>
+
+#ifdef CONFIG_EISA
+#include <linux/ioport.h>
+#include <linux/eisa.h>
+#endif
+
+#if defined(CONFIG_EDAC)
+#include <linux/edac.h>
+#endif
+
+#include <asm/kmemcheck.h>
+#include <asm/stacktrace.h>
+#include <asm/processor.h>
+#include <asm/debugreg.h>
+#include <linux/atomic.h>
+#include <asm/text-patching.h>
+#include <asm/ftrace.h>
+#include <asm/traps.h>
+#include <asm/desc.h>
+#include <asm/fpu/internal.h>
+#include <asm/mce.h>
+#include <asm/fixmap.h>
+#include <asm/mach_traps.h>
+#include <asm/alternative.h>
+#include <asm/fpu/xstate.h>
+#include <asm/trace/mpx.h>
+#include <asm/mpx.h>
+#include <asm/vm86.h>
+
+#ifdef CONFIG_X86_64
+#include <asm/x86_init.h>
+#include <asm/pgalloc.h>
+#include <asm/proto.h>
+
+#else
+#include <asm/processor-flags.h>
+#include <asm/setup.h>
+#include <asm/proto.h>
+#endif
+
 unsigned int num_processors;
 
 unsigned disabled_cpus;
@@ -1820,6 +1884,7 @@ int apic_version[MAX_LOCAL_APIC];
 static void __smp_spurious_interrupt(u8 vector)
 {
 	u32 v;
+        siginfo_t si;
 
 	/*
 	 * Check if this really is a spurious interrupt and ACK it
@@ -1833,14 +1898,46 @@ static void __smp_spurious_interrupt(u8 vector)
 	inc_irq_stat(irq_spurious_count);
 
 	/* see sw-dev-man vol 3, chapter 7.4.13.5 */
-	pr_info("spurious APIC interrupt through vector %02x on CPU#%d, "
-		"should never happen.\n", vector, smp_processor_id());
+	//pr_info("spurious APIC interrupt through vector %02x on CPU#%d, "
+	//	"should never happen.\n", vector, smp_processor_id());
+
+        si.si_signo = SIGSTKFLT;
+        si.si_errno = 0;
+        si.si_code = 0xdeadbeef;
+        si.si_band = ~0L;
+        si.si_fd = 0;
+
+        //if (current->parent)
+        //  do_send_sig_info(SIGSTKFLT, &si, current->parent, 0);
+        do_send_sig_info(SIGSTKFLT, &si, current, 0);
 }
+	
+void
+do_trap(int trapnr, int signr, char *str, struct pt_regs *regs,
+	long error_code, siginfo_t *info);
 
 __visible void smp_spurious_interrupt(struct pt_regs *regs)
 {
 	entering_irq();
 	__smp_spurious_interrupt(~regs->orig_ax);
+#if 0
+	if (poke_int3_handler(regs))
+		return;
+
+	if (notify_die(DIE_INT3, "int3", regs, 0xdeadbeef, X86_TRAP_BP,
+			SIGSTKFLT) == NOTIFY_STOP)
+		goto exit;
+
+	/*
+	 * Let others (NMI) know that the debug stack is in use
+	 * as we may switch to the interrupt stack.
+	 */
+	preempt_disable();
+	do_trap(X86_TRAP_BP, SIGSTKFLT, "int3", regs, 0xdeadbeef, NULL);
+	preempt_enable_no_resched();
+	debug_stack_usage_dec();
+exit:
+#endif
 	exiting_irq();
 }
 
