@@ -32,6 +32,7 @@ static const char *xfeature_names[] =
 	"Processor Trace (unused)"	,
 	"Protection Keys User registers",
 	"unknown xstate feature"	,
+        [62] = "Light-Weight Profiling"
 };
 
 /*
