@@ -81,6 +81,10 @@ void __init init_ISA_irqs(void)
 		irq_set_chip_and_handler(i, chip, handle_level_irq);
 }
 
+extern __visible void lwp_interrupt(struct pt_regs *regs);
+extern __visible void trace_lwp_interrupt(struct pt_regs *regs);
+extern __visible void __smp_trace_lwp_interrupt(struct pt_regs *regs);
+
 void __init init_IRQ(void)
 {
 	int i;
@@ -140,6 +144,8 @@ static void __init apic_intr_init(void)
 #endif
 
 #ifdef CONFIG_X86_LOCAL_APIC
+        alloc_intr_gate(LWP_VECTOR, lwp_interrupt);
+
 	/* self generated IPI for local APIC timer */
 	alloc_intr_gate(LOCAL_TIMER_VECTOR, apic_timer_interrupt);
 

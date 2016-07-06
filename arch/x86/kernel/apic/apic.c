@@ -1879,12 +1879,128 @@ int apic_version[MAX_LOCAL_APIC];
  */
 
 /*
+ * This interrupt doesn't go through the APIC.  It cannot be blocked
+ * (but is triggered only when CPL=3), and cannot be shared with real
+ * interrupts as there is no delivery status.
+ */
+
+static void (*lwp_interrupt_handler)(struct pt_regs *regs);
+static DEFINE_MUTEX(lwp_interrupt_mutex);
+
+bool request_lwp_interrupt(void (*handler)(struct pt_regs *))
+{
+        mutex_lock(&lwp_interrupt_mutex);
+
+        if (!!lwp_interrupt_handler == !!handler)
+                goto fail;
+
+        lwp_interrupt_handler = handler;
+
+        mutex_unlock(&lwp_interrupt_mutex);
+
+        return true;
+
+ fail:
+        mutex_unlock(&lwp_interrupt_mutex);
+
+        return false;
+}
+EXPORT_SYMBOL_GPL(request_lwp_interrupt);
+
+__visible void lwp_interrupt(struct pt_regs *regs)
+{
+        void (*handler)(struct pt_regs *regs);
+	u32 v; 
+        u8 vector = LWP_VECTOR;
+	entering_irq();
+	/*
+	 * Check if this really is a spurious interrupt and ACK it
+	 * if it is a vectored one.  Just in case...
+	 * Spurious interrupts should not be ACKed.
+	 */
+	v = apic_read(APIC_ISR + ((vector & ~0x1f) >> 1));
+	if (v & (1 << (vector & 0x1f)))
+		ack_APIC_irq();
+
+        handler = lwp_interrupt_handler;
+        if (handler)
+                handler(regs);
+	exiting_irq();
+}
+
+__visible void __smp_lwp_interrupt(struct pt_regs *regs)
+{
+        void (*handler)(struct pt_regs *regs);
+	u32 v;
+        u8 vector = LWP_VECTOR;
+
+	entering_irq();
+	/*
+	 * Check if this really is a spurious interrupt and ACK it
+	 * if it is a vectored one.  Just in case...
+	 * Spurious interrupts should not be ACKed.
+	 */
+	v = apic_read(APIC_ISR + ((vector & ~0x1f) >> 1));
+	if (v & (1 << (vector & 0x1f)))
+		ack_APIC_irq();
+
+        handler = lwp_interrupt_handler;
+        if (handler)
+          handler(regs);
+	exiting_irq();
+}
+
+__visible void trace_lwp_interrupt(struct pt_regs *regs)
+{
+        void (*handler)(struct pt_regs *regs);
+	u32 v;
+        u8 vector = LWP_VECTOR;
+
+	entering_irq();
+	/*
+	 * Check if this really is a spurious interrupt and ACK it
+	 * if it is a vectored one.  Just in case...
+	 * Spurious interrupts should not be ACKed.
+	 */
+	v = apic_read(APIC_ISR + ((vector & ~0x1f) >> 1));
+	if (v & (1 << (vector & 0x1f)))
+		ack_APIC_irq();
+
+        handler = lwp_interrupt_handler;
+        if (handler)
+          handler(regs);
+	exiting_irq();
+}
+
+__visible void __smp_trace_lwp_interrupt(struct pt_regs *regs)
+{
+        void (*handler)(struct pt_regs *regs);
+	u32 v;
+        u8 vector = LWP_VECTOR;
+
+	entering_irq();
+	/*
+	 * Check if this really is a spurious interrupt and ACK it
+	 * if it is a vectored one.  Just in case...
+	 * Spurious interrupts should not be ACKed.
+	 */
+	v = apic_read(APIC_ISR + ((vector & ~0x1f) >> 1));
+	if (v & (1 << (vector & 0x1f)))
+		ack_APIC_irq();
+
+        handler = lwp_interrupt_handler;
+        if (handler)
+          handler(regs);
+	exiting_irq();
+}
+
+/*
  * This interrupt should _never_ happen with our APIC/SMP architecture
  */
-static void __smp_spurious_interrupt(u8 vector)
+static void __smp_spurious_interrupt(u8 vector, struct pt_regs *regs)
 {
 	u32 v;
-        siginfo_t si;
+        void (*handler)(struct pt_regs *regs);
 
 	/*
 	 * Check if this really is a spurious interrupt and ACK it
@@ -1901,17 +2017,11 @@ static void __smp_spurious_interrupt(u8 vector)
 	//pr_info("spurious APIC interrupt through vector %02x on CPU#%d, "
 	//	"should never happen.\n", vector, smp_processor_id());
 
-        si.si_signo = SIGSTKFLT;
-        si.si_errno = 0;
-        si.si_code = 0xdeadbeef;
-        si.si_band = ~0L;
-        si.si_fd = 0;
-
-        //if (current->parent)
-        //  do_send_sig_info(SIGSTKFLT, &si, current->parent, 0);
-        do_send_sig_info(SIGSTKFLT, &si, current, 0);
+        handler = lwp_interrupt_handler;
+        if (handler)
+                handler(regs);
 }
-	
+
 void
 do_trap(int trapnr, int signr, char *str, struct pt_regs *regs,
 	long error_code, siginfo_t *info);
@@ -1919,7 +2029,7 @@ do_trap(int trapnr, int signr, char *str, struct pt_regs *regs,
 __visible void smp_spurious_interrupt(struct pt_regs *regs)
 {
 	entering_irq();
-	__smp_spurious_interrupt(~regs->orig_ax);
+	__smp_spurious_interrupt(~regs->orig_ax, regs);
 #if 0
 	if (poke_int3_handler(regs))
 		return;
@@ -1947,7 +2057,7 @@ __visible void smp_trace_spurious_interrupt(struct pt_regs *regs)
 
 	entering_irq();
 	trace_spurious_apic_entry(vector);
-	__smp_spurious_interrupt(vector);
+	__smp_spurious_interrupt(vector, regs);
 	trace_spurious_apic_exit(vector);
 	exiting_irq();
 }
