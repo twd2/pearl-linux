@@ -80,10 +80,6 @@ int arch_show_interrupts(struct seq_file *p, int prec)
 	for_each_online_cpu(j)
 		seq_printf(p, "%10u ", irq_stats(j)->apic_perf_irqs);
 	seq_puts(p, "  Performance monitoring interrupts\n");
-	seq_printf(p, "%*s: ", prec, "LWP");
-	for_each_online_cpu(j)
-		seq_printf(p, "%10u ", irq_stats(j)->lwp_irqs);
-	seq_puts(p, "  Light-weight profiling interrupts\n");
 	seq_printf(p, "%*s: ", prec, "IWI");
 	for_each_online_cpu(j)
 		seq_printf(p, "%10u ", irq_stats(j)->apic_irq_work_irqs);

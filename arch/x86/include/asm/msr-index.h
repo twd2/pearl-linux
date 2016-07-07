@@ -306,8 +306,6 @@
 #define MSR_AMD64_IBSOPDATA4		0xc001103d
 #define MSR_AMD64_IBS_REG_COUNT_MAX	8 /* includes MSR_AMD64_IBSBRTARGET */
 
-#define MSR_AMD64_LWP_CFG               0xc0000105
-
 /* Fam 17h MSRs */
 #define MSR_F17H_IRPERF			0xc00000e9
 

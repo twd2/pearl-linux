@@ -33,11 +33,4 @@ config PERF_EVENTS_AMD_POWER
 	  (CPUID Fn8000_0007_EDX[12]) interface to calculate the
 	  average power consumption on Family 15h processors.
 
-config PERF_EVENTS_AMD_LWP
-        depends on PERF_EVENTS && CPU_SUP_AMD
-        tristate "AMD Light-Weight Profiling events"
-        ---help---
-          Enable Light-Weight Profiling support for AMD processors. Forward
-          threshold interrupts as performance events.
-
 endmenu
