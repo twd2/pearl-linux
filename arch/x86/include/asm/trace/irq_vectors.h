@@ -60,6 +60,11 @@ DEFINE_IRQ_VECTOR_EVENT(spurious_apic);
 DEFINE_IRQ_VECTOR_EVENT(error_apic);
 
 /*
+ * lwp_interrupt - called when entering/exiting the LWP event handler
+ */
+DEFINE_IRQ_VECTOR_EVENT(lwp_interrupt);
+
+/*
  * x86_platform_ipi - called when entering/exiting a x86 platform ipi interrupt
  * vector handler
  */

@@ -101,6 +101,13 @@
 #endif
 
 /*
+ * Light-Weight Profiling is special: its interrupts do not go through
+ * the APIC, but are internal to the CPU, and selected directly by a
+ * vector.  Use the x86 platform-specific vector.
+ */
+#define LWP_VECTOR                      0xf7
+
+/*
  * Local APIC timer IRQ vector is on a different priority level,
  * to work around the 'lost local interrupt if more than 2 IRQ
  * sources per level' errata.

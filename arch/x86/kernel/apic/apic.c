@@ -56,6 +56,70 @@
 #include <asm/tsc.h>
 #include <asm/hypervisor.h>
 
+#include <linux/context_tracking.h>
+#include <linux/interrupt.h>
+#include <linux/kallsyms.h>
+#include <linux/spinlock.h>
+#include <linux/kprobes.h>
+#include <linux/uaccess.h>
+#include <linux/kdebug.h>
+#include <linux/kgdb.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/ptrace.h>
+#include <linux/uprobes.h>
+#include <linux/string.h>
+#include <linux/delay.h>
+#include <linux/errno.h>
+#include <linux/kexec.h>
+#include <linux/sched.h>
+#include <linux/timer.h>
+#include <linux/init.h>
+#include <linux/bug.h>
+#include <linux/nmi.h>
+#include <linux/mm.h>
+#include <linux/smp.h>
+#include <linux/io.h>
+
+#ifdef CONFIG_EISA
+#include <linux/ioport.h>
+#include <linux/eisa.h>
+#endif
+
+#if defined(CONFIG_EDAC)
+#include <linux/edac.h>
+#endif
+
+#include <asm/kmemcheck.h>
+#include <asm/stacktrace.h>
+#include <asm/processor.h>
+#include <asm/debugreg.h>
+#include <linux/atomic.h>
+#include <asm/text-patching.h>
+#include <asm/ftrace.h>
+#include <asm/traps.h>
+#include <asm/desc.h>
+#include <asm/fpu/internal.h>
+#include <asm/mce.h>
+#include <asm/fixmap.h>
+#include <asm/mach_traps.h>
+#include <asm/alternative.h>
+#include <asm/fpu/xstate.h>
+#include <asm/trace/mpx.h>
+#include <asm/mpx.h>
+#include <asm/vm86.h>
+
+#ifdef CONFIG_X86_64
+#include <asm/x86_init.h>
+#include <asm/pgalloc.h>
+#include <asm/proto.h>
+
+#else
+#include <asm/processor-flags.h>
+#include <asm/setup.h>
+#include <asm/proto.h>
+#endif
+
 unsigned int num_processors;
 
 unsigned disabled_cpus;
@@ -1815,11 +1879,116 @@ int apic_version[MAX_LOCAL_APIC];
  */
 
 /*
+ * This interrupt doesn't go through the APIC.  It cannot be blocked
+ * (but is triggered only when CPL=3), and cannot be shared with real
+ * interrupts as there is no delivery status.
+ */
+
+static void (*lwp_interrupt_handler)(struct pt_regs *regs);
+static DEFINE_MUTEX(lwp_interrupt_mutex);
+
+bool request_lwp_interrupt(void (*handler)(struct pt_regs *))
+{
+        mutex_lock(&lwp_interrupt_mutex);
+
+        if (!!lwp_interrupt_handler == !!handler)
+                goto fail;
+
+        lwp_interrupt_handler = handler;
+
+        mutex_unlock(&lwp_interrupt_mutex);
+
+        return true;
+
+ fail:
+        mutex_unlock(&lwp_interrupt_mutex);
+
+        return false;
+}
+EXPORT_SYMBOL_GPL(request_lwp_interrupt);
+
+__visible void lwp_interrupt(struct pt_regs *regs)
+{
+        void (*handler)(struct pt_regs *regs);
+        u32 v;
+        u8 vector = LWP_VECTOR;
+        entering_irq();
+        v = apic_read(APIC_ISR + ((vector & ~0x1f) >> 1));
+        if (v & (1 << (vector & 0x1f))) {
+                printk(KERN_WARNING "acking LWP interrupt?!\n");
+                ack_APIC_irq();
+        }
+
+        handler = lwp_interrupt_handler;
+        if (handler)
+                handler(regs);
+        exiting_irq();
+}
+
+__visible void __smp_lwp_interrupt(struct pt_regs *regs)
+{
+        void (*handler)(struct pt_regs *regs);
+        u32 v;
+        u8 vector = LWP_VECTOR;
+
+        entering_irq();
+        v = apic_read(APIC_ISR + ((vector & ~0x1f) >> 1));
+        if (v & (1 << (vector & 0x1f))) {
+                printk(KERN_WARNING "acking LWP interrupt?!\n");
+                ack_APIC_irq();
+        }
+
+        handler = lwp_interrupt_handler;
+        if (handler)
+          handler(regs);
+        exiting_irq();
+}
+
+__visible void trace_lwp_interrupt(struct pt_regs *regs)
+{
+        void (*handler)(struct pt_regs *regs);
+        u32 v;
+        u8 vector = LWP_VECTOR;
+
+        entering_irq();
+        v = apic_read(APIC_ISR + ((vector & ~0x1f) >> 1));
+        if (v & (1 << (vector & 0x1f))) {
+                printk(KERN_WARNING "acking LWP interrupt?!\n");
+                ack_APIC_irq();
+        }
+
+        handler = lwp_interrupt_handler;
+        if (handler)
+          handler(regs);
+        exiting_irq();
+}
+
+__visible void __smp_trace_lwp_interrupt(struct pt_regs *regs)
+{
+        void (*handler)(struct pt_regs *regs);
+        u32 v;
+        u8 vector = LWP_VECTOR;
+
+        entering_irq();
+        v = apic_read(APIC_ISR + ((vector & ~0x1f) >> 1));
+        if (v & (1 << (vector & 0x1f))) {
+                printk(KERN_WARNING "acking LWP interrupt?!\n");
+                ack_APIC_irq();
+        }
+
+        handler = lwp_interrupt_handler;
+        if (handler)
+          handler(regs);
+        exiting_irq();
+}
+
+/*
  * This interrupt should _never_ happen with our APIC/SMP architecture
  */
-static void __smp_spurious_interrupt(u8 vector)
+static void __smp_spurious_interrupt(u8 vector, struct pt_regs *regs)
 {
 	u32 v;
+        void (*handler)(struct pt_regs *regs);
 
 	/*
 	 * Check if this really is a spurious interrupt and ACK it
@@ -1833,14 +2002,18 @@ static void __smp_spurious_interrupt(u8 vector)
 	inc_irq_stat(irq_spurious_count);
 
 	/* see sw-dev-man vol 3, chapter 7.4.13.5 */
-	pr_info("spurious APIC interrupt through vector %02x on CPU#%d, "
-		"should never happen.\n", vector, smp_processor_id());
-}
+	//pr_info("spurious APIC interrupt through vector %02x on CPU#%d, "
+	//	"should never happen.\n", vector, smp_processor_id());
 
+        handler = lwp_interrupt_handler;
+        if (handler)
+                handler(regs);
+}
+	
 __visible void smp_spurious_interrupt(struct pt_regs *regs)
 {
 	entering_irq();
-	__smp_spurious_interrupt(~regs->orig_ax);
+        __smp_spurious_interrupt(~regs->orig_ax, regs);
 	exiting_irq();
 }
 
@@ -1850,7 +2023,7 @@ __visible void smp_trace_spurious_interrupt(struct pt_regs *regs)
 
 	entering_irq();
 	trace_spurious_apic_entry(vector);
-	__smp_spurious_interrupt(vector);
+        __smp_spurious_interrupt(vector, regs);
 	trace_spurious_apic_exit(vector);
 	exiting_irq();
 }
