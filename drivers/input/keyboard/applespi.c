@@ -729,6 +729,8 @@ static int applespi_enable_spi(struct applespi_data *applespi)
 		if(spi_status)
 			return 0;
 
+		gpiod_direction_output(applespi->spiengpio, 0);
+		mdelay(1000);
 		gpiod_direction_output(applespi->spiengpio, 1);
 #endif
 	} else {
@@ -1796,9 +1798,9 @@ static int applespi_probe(struct spi_device *spi)
 
 		/* reset the controller on boot */
 		gpiod_direction_output(applespi->spiengpio, 1);
-		msleep(5);
+		msleep(500);
 		gpiod_direction_output(applespi->spiengpio, 0);
-		msleep(5);
+		msleep(500);
 #endif
 	} else {
 #ifdef CONFIG_ACPI
