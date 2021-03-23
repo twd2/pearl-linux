@@ -14,6 +14,7 @@
 #include <linux/of_device.h>
 #include <linux/of_address.h>
 #include <linux/delay.h>
+#include <linux/clk.h>
 #include <asm/io.h>
 
 #define PMGR_GATE	1
@@ -28,6 +29,8 @@ struct clk_apple_pmgr {
 	const unsigned *seq[4];
 	unsigned seqn[4];
 	u32 freq_target;
+	int nclks;
+	struct clk_bulk_data *clks;
 };
 
 #define to_clk_apple_pmgr(_hw) container_of(_hw, struct clk_apple_pmgr, hw)
@@ -203,6 +206,12 @@ static int clk_apple_pmgr_driver_probe(struct platform_device *pdev)
 	}
 	clk_apple_pmgr->name = node->name;
 
+	int ret = clk_bulk_get_all(&pdev->dev, &clk_apple_pmgr->clks);
+	if(ret < 0)
+		return ret;
+	clk_apple_pmgr->nclks = ret;
+	clk_bulk_prepare(clk_apple_pmgr->nclks, clk_apple_pmgr->clks);
+	clk_bulk_enable(clk_apple_pmgr->nclks, clk_apple_pmgr->clks);
 	init.name = node->name;
 	init.parent_names = parent_names;
 	init.num_parents = num_parents;
