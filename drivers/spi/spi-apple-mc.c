@@ -315,6 +315,8 @@ static int apple_spimc_setup(struct spi_device *spid)
 	if(!spid->max_speed_hz || spid->max_speed_hz > (spi->clkfreq / 2))
 		spid->max_speed_hz = spi->clkfreq / 2;
 
+	spid->max_speed_hz = 2000000;
+
 	if(spid->max_speed_hz < spi->clkfreq / (REG_CLKDIV_MAX + 1)) {
 		dev_err(&spid->dev, "setup: requested speed is too low: %d Hz\n",
 			spid->max_speed_hz);
