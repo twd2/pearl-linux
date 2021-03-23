@@ -15,7 +15,7 @@
     };
 
     chosen {
-        bootargs = "earlycon=apple_uart,0x235200000 console=tty0";
+        bootargs = "init=/bin/bash 1 clk_ignore_unused up nosmp";
     };
 
     memory@800000000 {
