@@ -223,6 +223,7 @@ static int apple_spimc_transfer_one_message(struct spi_controller *master, struc
 		if(t->speed_hz < speed && t->speed_hz)
 			speed = t->speed_hz;
 
+	speed = 2000000;
 	if(apple_spimc_prepare(spid, speed)) {
 		status = -EIO;
 		goto msg_done;
@@ -314,8 +315,6 @@ static int apple_spimc_setup(struct spi_device *spid)
 
 	if(!spid->max_speed_hz || spid->max_speed_hz > (spi->clkfreq / 2))
 		spid->max_speed_hz = spi->clkfreq / 2;
-
-	spid->max_speed_hz = 2000000;
 
 	if(spid->max_speed_hz < spi->clkfreq / (REG_CLKDIV_MAX + 1)) {
 		dev_err(&spid->dev, "setup: requested speed is too low: %d Hz\n",
