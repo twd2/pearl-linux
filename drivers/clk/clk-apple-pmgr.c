@@ -63,6 +63,9 @@ static int clk_apple_pmgr_gate_enable(struct clk_hw *hw)
 
 	val = readl(clk->bases[0]);
 
+	if ((val & 15) == 15)
+		return 0;
+
 	val |= 15;
 	val &= ~0x300;
 	writel(val, clk->bases[0]);
@@ -90,6 +93,7 @@ static int clk_apple_pmgr_gate_enable(struct clk_hw *hw)
 
 static void clk_apple_pmgr_gate_disable(struct clk_hw *hw)
 {
+	return;
 	struct clk_apple_pmgr *clk = to_clk_apple_pmgr(hw);
 	unsigned max = 10000;
 	uint32_t val;
