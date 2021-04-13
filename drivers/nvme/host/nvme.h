@@ -152,6 +152,11 @@ enum nvme_quirks {
 	 * an index into that array into a FIFO-type register.
 	 */
 	NVME_QUIRK_LINEAR_SQ			= (1 << 16),
+	/*
+	 * The controller does not properly handle DMA addresses over
+	 * 48 bits.
+	 */
+	NVME_QUIRK_DMA_ADDRESS_BITS_48		= (1 << 17),
 };
 
 /*
@@ -254,6 +259,9 @@ struct nvme_ctrl {
 	struct rw_semaphore namespaces_rwsem;
 	struct device ctrl_device;
 	struct device *device;	/* char device */
+#ifdef CONFIG_NVME_HWMON
+	struct device *hwmon_device;
+#endif
 	struct cdev cdev;
 	struct work_struct reset_work;
 	struct work_struct delete_work;
@@ -583,7 +591,10 @@ static inline bool nvme_is_aen_req(u16 qid, __u16 command_id)
 }
 
 void nvme_complete_rq(struct request *req);
+blk_status_t nvme_host_path_error(struct request *req);
 bool nvme_cancel_request(struct request *req, void *data, bool reserved);
+void nvme_cancel_tagset(struct nvme_ctrl *ctrl);
+void nvme_cancel_admin_tagset(struct nvme_ctrl *ctrl);
 bool nvme_change_ctrl_state(struct nvme_ctrl *ctrl,
 		enum nvme_ctrl_state new_state);
 bool nvme_wait_reset(struct nvme_ctrl *ctrl);
@@ -817,10 +828,15 @@ static inline struct nvme_ns *nvme_get_ns_from_dev(struct device *dev)
 
 #ifdef CONFIG_NVME_HWMON
 int nvme_hwmon_init(struct nvme_ctrl *ctrl);
+void nvme_hwmon_exit(struct nvme_ctrl *ctrl);
 #else
 static inline int nvme_hwmon_init(struct nvme_ctrl *ctrl)
 {
 	return 0;
+}
+
+static inline void nvme_hwmon_exit(struct nvme_ctrl *ctrl)
+{
 }
 #endif
 

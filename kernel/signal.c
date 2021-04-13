@@ -2550,6 +2550,9 @@ bool get_signal(struct ksignal *ksig)
 	struct signal_struct *signal = current->signal;
 	int signr;
 
+	if (unlikely(current->task_works))
+		task_work_run();
+
 	/*
 	 * For non-generic architectures, check for TIF_NOTIFY_SIGNAL so
 	 * that the arch handlers don't all have to do it. If we get here
@@ -2765,13 +2768,21 @@ relock:
 		}
 
 		/*
+		 * PF_IO_WORKER threads will catch and exit on fatal signals
+		 * themselves. They have cleanup that must be performed, so
+		 * we cannot call do_exit() on their behalf.
+		 */
+		if (current->flags & PF_IO_WORKER)
+			goto out;
+
+		/*
 		 * Death signals, no core dump.
 		 */
 		do_group_exit(ksig->info.si_signo);
 		/* NOTREACHED */
 	}
 	spin_unlock_irq(&sighand->siglock);
-
+out:
 	ksig->sig = signr;
 
 	if (!(ksig->ka.sa.sa_flags & SA_EXPOSE_TAGBITS))
@@ -3701,7 +3712,8 @@ static bool access_pidfd_pidns(struct pid *pid)
 	return true;
 }
 
-static int copy_siginfo_from_user_any(kernel_siginfo_t *kinfo, siginfo_t *info)
+static int copy_siginfo_from_user_any(kernel_siginfo_t *kinfo,
+		siginfo_t __user *info)
 {
 #ifdef CONFIG_COMPAT
 	/*

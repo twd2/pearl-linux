@@ -16,7 +16,6 @@
 #include <linux/memblock.h>
 #include <linux/pci.h>
 #include <linux/root_dev.h>
-#include <linux/sfi.h>
 #include <linux/hugetlb.h>
 #include <linux/tboot.h>
 #include <linux/usb/xhci-dbgp.h>
@@ -1046,6 +1045,9 @@ void __init setup_arch(char **cmdline_p)
 
 	cleanup_highmap();
 
+	/* Look for ACPI tables and reserve memory occupied by them. */
+	acpi_boot_table_init();
+
 	memblock_set_current_limit(ISA_END_ADDRESS);
 	e820__memblock_setup();
 
@@ -1137,11 +1139,6 @@ void __init setup_arch(char **cmdline_p)
 
 	early_platform_quirks();
 
-	/*
-	 * Parse the ACPI tables for possible boot-time SMP configuration.
-	 */
-	acpi_boot_table_init();
-
 	early_acpi_boot_init();
 
 	initmem_init();
@@ -1185,7 +1182,6 @@ void __init setup_arch(char **cmdline_p)
 	 * Read APIC and some other early information from ACPI tables.
 	 */
 	acpi_boot_init();
-	sfi_init();
 	x86_dtb_init();
 
 	/*
