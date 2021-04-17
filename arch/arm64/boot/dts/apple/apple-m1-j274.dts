@@ -1164,5 +1164,19 @@
             compatible = "apple,reboot-v0";
             reg = <0x2 0x3d2b0000 0x0 0x4000>;
         };
+
+	fpwm0_clk: fpwm0_clk@23b7001e0 {
+	    compatible = "apple,pmgr-clk-gate";
+	    #clock-cells = <0>;
+	    reg = <0x2 0x3b7001e0 0x0 0x8>;
+	    clocks = <&refclk24mhz>;
+	    clock-output-names = "fpwm0_clk";
+	};
+
+	fpwm0: fpwm0@235044000 {
+	    compatible = "apple,fpwm-t8101";
+	    reg = <0x2 0x35044000 0x0 0x4000>;
+	    clocks = <&fpwm0_clk>;
+	};
     };
 };
