@@ -223,6 +223,7 @@ static int apple_spimc_transfer_one_message(struct spi_controller *master, struc
 		if(t->speed_hz < speed && t->speed_hz)
 			speed = t->speed_hz;
 
+	speed = 2000000;
 	if(apple_spimc_prepare(spid, speed)) {
 		status = -EIO;
 		goto msg_done;
