@@ -222,7 +222,7 @@ static int apple_m1_cpufreq_init(struct cpufreq_policy *policy)
 
 static struct cpufreq_driver apple_m1_cpufreq_driver = {
 	.name = "apple-m1-pmgr",
-	.flags = CPUFREQ_STICKY | CPUFREQ_HAVE_GOVERNOR_PER_POLICY,
+	.flags = CPUFREQ_HAVE_GOVERNOR_PER_POLICY,
 	.verify = cpufreq_generic_frequency_table_verify,
 	.target_index = apple_m1_cpufreq_set_target,
 	.init = apple_m1_cpufreq_init,
