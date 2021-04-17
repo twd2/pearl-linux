@@ -11,6 +11,7 @@
  * Author: Peter Ujfalusi <peter.ujfalusi@ti.com>
  */
 
+#include <linux/clk.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/io.h>
@@ -29,6 +30,7 @@
 struct fpwm_chip {
 	struct pwm_chip chip;
 	void __iomem *regbase;
+	struct clk *clk;
 	struct mutex mutex; // XXX
 };
 
@@ -93,15 +95,26 @@ static int fpwm_probe(struct platform_device *pdev)
 	mutex_init(&fpwm->mutex);
 
 	ret = pwmchip_add(&fpwm->chip);
-	if (ret < 0)
+	if(ret < 0)
 		return ret;
 
 	platform_set_drvdata(pdev, fpwm);
 
 	rsrc = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	fpwm->regbase = devm_ioremap_resource(&pdev->dev, rsrc);
-	if (IS_ERR(fpwm->regbase))
+	if(IS_ERR(fpwm->regbase))
 		return PTR_ERR(fpwm->regbase);
+
+	fpwm->clk = devm_clk_get(&pdev->dev, NULL);
+	if(IS_ERR(fpwm->clk)) {
+		dev_err(&pdev->dev, "unable to get clock: %ld\n",
+		        PTR_ERR(fpwm->clk));
+		return PTR_ERR(fpwm->clk);
+	}
+
+	ret = clk_prepare_enable(fpwm->clk);
+	if(ret)
+		return ret;
 
 	return 0;
 }
@@ -109,6 +122,8 @@ static int fpwm_probe(struct platform_device *pdev)
 static int fpwm_remove(struct platform_device *pdev)
 {
 	struct fpwm_chip *fpwm = platform_get_drvdata(pdev);
+
+	clk_disable_unprepare(fpwm->clk);
 
 	return pwmchip_remove(&fpwm->chip);
 }
