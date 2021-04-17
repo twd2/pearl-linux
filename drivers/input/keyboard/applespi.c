@@ -492,6 +492,20 @@ struct applespi_key_translation {
 };
 
 static const struct applespi_key_translation applespi_fn_codes[] = {
+	{ KEY_ESC,      KEY_SYSRQ },
+	{ KEY_GRAVE,    KEY_SYSRQ },
+	{ KEY_1,        KEY_F1 },
+	{ KEY_2,        KEY_F2 },
+	{ KEY_3,        KEY_F3 },
+	{ KEY_4,        KEY_F4 },
+	{ KEY_5,        KEY_F5 },
+	{ KEY_6,        KEY_F6 },
+	{ KEY_7,        KEY_F7 },
+	{ KEY_8,        KEY_F8 },
+	{ KEY_9,        KEY_F9 },
+	{ KEY_0,        KEY_F10 },
+	{ KEY_MINUS,    KEY_F11 },
+	{ KEY_EQUAL,    KEY_F12 },
 	{ KEY_BACKSPACE, KEY_DELETE },
 	{ KEY_ENTER,	KEY_INSERT },
 	{ KEY_F1,	KEY_BRIGHTNESSDOWN,	APPLE_FLAG_FKEY },
@@ -730,6 +744,8 @@ static int applespi_enable_spi(struct applespi_data *applespi)
 		if(spi_status)
 			return 0;
 
+		gpiod_direction_output(applespi->spiengpio, 0);
+		mdelay(1000);
 		gpiod_direction_output(applespi->spiengpio, 1);
 #endif
 	} else {
@@ -1807,9 +1823,9 @@ static int applespi_probe(struct spi_device *spi)
 
 		/* reset the controller on boot */
 		gpiod_direction_output(applespi->spiengpio, 1);
-		msleep(5);
+		msleep(500);
 		gpiod_direction_output(applespi->spiengpio, 0);
-		msleep(5);
+		msleep(500);
 #endif
 	} else {
 #ifdef CONFIG_ACPI
@@ -1832,6 +1848,8 @@ static int applespi_probe(struct spi_device *spi)
 #endif
 	}
 
+	unsigned long flags;
+	local_irq_save(flags);
 	/* prepare SPI settings and locks */
 	sts = applespi_setup_spi(applespi);
 	if (sts)
@@ -1986,6 +2004,7 @@ static int applespi_probe(struct spi_device *spi)
 	debugfs_create_file("tp_dim", 0400, applespi->debugfs_root, applespi,
 			    &applespi_tp_dim_fops);
 
+	local_irq_restore(flags);
 	return 0;
 }
 
