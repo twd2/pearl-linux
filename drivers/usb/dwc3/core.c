@@ -739,6 +739,7 @@ static bool dwc3_core_is_valid(struct dwc3 *dwc)
 		dwc->revision = dwc3_readl(dwc->regs, DWC3_VER_NUMBER);
 		dwc->version_type = dwc3_readl(dwc->regs, DWC3_VER_TYPE);
 	} else {
+		dwc->revision = reg;
 		return false;
 	}
 
@@ -1539,9 +1540,7 @@ static int dwc3_probe(struct platform_device *pdev)
 		goto assert_reset;
 
 	if (!dwc3_core_is_valid(dwc)) {
-		dev_err(dwc->dev, "this is not a DesignWare USB3 DRD Core\n");
-		ret = -ENODEV;
-		goto disable_clks;
+		printk("doesn't appear to be valid, continuing ...");
 	}
 
 	platform_set_drvdata(pdev, dwc);

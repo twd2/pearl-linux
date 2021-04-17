@@ -754,7 +754,9 @@ static int tps6598x_probe(struct i2c_client *client)
 		INIT_DELAYED_WORK(&tps->cd321x_status_work, tps6598x_cd321x_status_work);
 	}
 
-	if(pstate == TPS_POWER_STATE_BOOT) {
+	unsigned long flags;
+	local_irq_save(flags);
+	if (0 && pstate == TPS_POWER_STATE_BOOT) {
 		/* on Apple M1, this is how the CD3217/8 comes up; transition to S0 */
 		u8 ssps_data[2] = { TPS_POWER_STATE_S0, 0 };
 
@@ -848,6 +850,7 @@ static int tps6598x_probe(struct i2c_client *client)
 
 	i2c_set_clientdata(client, tps);
 
+	local_irq_restore(flags);
 	return 0;
 
 err_role_put:
