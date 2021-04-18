@@ -172,7 +172,7 @@ static int apple_m1_smc_read_key_payload(struct apple_m1_smc *smc, u32 key,
 	}
 
 	if(outlen <= 4)
-		memcpy(data, (void *)out + 4, size);
+		memcpy(data, (void *)&out + 4, size);
 	return outlen;
 }
 
