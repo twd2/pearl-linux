@@ -15,8 +15,9 @@
 #include <linux/regmap.h>
 #include <linux/nvmem-consumer.h>
 #include <linux/mailbox_client.h>
+#include <linux/debugfs.h>
 
-#define MAX_GPIO		32
+#define MAX_GPIO		33
 
 #define SMC_READ_KEY		0x10
 #define SMC_WRITE_KEY		0x11
@@ -51,6 +52,8 @@ struct apple_m1_smc {
 	struct nvmem_device *nvmem;
 	u32 nvmem_poweroff[MAX_POWEROFF*3]; /* addr, mask, val */
 	unsigned num_poweroff;
+
+	struct dentry *debugfs_dir;
 };
 
 static struct apple_m1_smc *apple_m1_smc_instance = NULL;
@@ -138,6 +141,8 @@ static int apple_m1_smc_cmd(struct apple_m1_smc *smc, u8 cmd, u16 hparam, u32 wp
 		if(cmd != SMC_GET_KEY_BY_INDEX) /* key enumeration would be noisy */
 			dev_warn(smc->dev, "command [%016llx] failed: %d.\n", msg[0], ret);
 		return -EIO;
+	} else {
+		dev_warn(smc->dev, "command [%016llx] succeeded: %d.\n", msg[0], ret);
 	}
 	return 0;
 }
@@ -164,6 +169,7 @@ static int apple_m1_smc_read_key_payload(struct apple_m1_smc *smc, u32 key,
 	if(ret < 0)
 		return ret;
 
+	printk("out %016llx\n", out);
 	outlen = (out >> 16) & 0xFFFF;
 	if(outlen < size) {
 		dev_warn(smc->dev, "READ_KEY [%08x, %d] result too big: %d.\n",
@@ -288,6 +294,47 @@ static void apple_m1_smc_power_off(void)
 		pm_power_off();
 }
 
+struct apple_m1_smc_debugfs_data {
+	struct apple_m1_smc *smc;
+	u32 key;
+	struct apple_m1_smc_key_info ki;
+};
+
+static int apple_m1_smc_debugfs_key_show(struct seq_file *s, void *data_void)
+{
+	struct apple_m1_smc_debugfs_data *data = s->private;
+	struct apple_m1_smc *smc = data->smc;
+
+	u32 key = data->key;
+	char str[5];
+	struct apple_m1_smc_key_info ki = data->ki;
+	char t[5];
+	int i;
+	u8 *buf = kzalloc(ki.size, GFP_KERNEL);
+
+	str[0] = (key >> 24) & 0xff;
+	str[1] = (key >> 16) & 0xff;
+	str[2] = (key >> 8) & 0xff;
+	str[3] = key & 0xff;
+	str[4] = 0;
+	t[0] = ki.type & 0xff;
+	t[1] = (ki.type >> 8) & 0xff;
+	t[2] = (ki.type >> 16) & 0xff;
+	t[3] = (ki.type >> 24) & 0xff;
+	t[4] = 0;
+	seq_printf(s, "SMC KEY %x %x %x %x %s %s\n",
+		   key, ki.size, ki.type, ki.flags, str, t);
+
+	apple_m1_smc_read_key(smc, key, buf, ki.size);
+	for (i = 0; i < ki.size; i++) {
+		seq_printf(s, "byte %d is %02x '%c'\n",
+			   i, buf[i], (buf[i] >= 0x20 && buf[i] < 0x7f) ? buf[i] : ' ');
+	}
+	return 0;
+}
+
+DEFINE_SHOW_ATTRIBUTE(apple_m1_smc_debugfs_key);
+
 static int apple_m1_smc_enumerate(struct apple_m1_smc *smc)
 {
 	unsigned idx;
@@ -295,7 +342,14 @@ static int apple_m1_smc_enumerate(struct apple_m1_smc *smc)
 	struct apple_m1_smc_key_info ki;
 	int ret;
 
+	if(IS_ERR(smc->chan)) {
+		smc->chan = mbox_request_channel(&smc->mbox, 0);
+	}
 	for(idx=0; idx<SMC_MAX_KEYS; idx++) {
+		char str[5];
+		char t[5];
+		struct apple_m1_smc_debugfs_data *data = kzalloc(sizeof *data, GFP_KERNEL);
+		u8 *buf;
 		ret = apple_m1_smc_get_key_by_index(smc, idx, &key);
 		if(ret)
 			break;
@@ -303,6 +357,33 @@ static int apple_m1_smc_enumerate(struct apple_m1_smc *smc)
 		ret = apple_m1_smc_get_key_info(smc, key, &ki);
 		if(ret)
 			continue;
+
+		str[0] = (key >> 24) & 0xff;
+		str[1] = (key >> 16) & 0xff;
+		str[2] = (key >> 8) & 0xff;
+		str[3] = key & 0xff;
+		str[4] = 0;
+		t[0] = ki.type & 0xff;
+		t[1] = (ki.type >> 8) & 0xff;
+		t[2] = (ki.type >> 16) & 0xff;
+		t[3] = (ki.type >> 24) & 0xff;
+		t[4] = 0;
+		printk("SMC KEY %x %x %x %x %x %s %s\n",
+		       idx, key, ki.size, ki.type, ki.flags, str, t);
+
+#if 0
+		apple_m1_smc_read_key(smc, key, buf, ki.size);
+		for (i = 0; i < ki.size; i++) {
+		  printk("byte %d is %02x '%c'\n",
+			 i, buf[i], (buf[i] >= 0x20 && buf[i] < 0x7f) ? buf[i] : ' ');
+		}
+#endif
+
+		data->smc = smc;
+		data->ki = ki;
+		data->key = key;
+		debugfs_create_file(str, 0400, smc->debugfs_dir,
+				    data, &apple_m1_smc_debugfs_key_fops);
 	}
 
 	return 0;
@@ -398,6 +479,8 @@ static int apple_m1_smc_probe(struct platform_device *pdev)
 		}
 		smc->num_poweroff = ret / 3;
 	}
+
+	smc->debugfs_dir = debugfs_create_dir("smc", NULL);
 
 	ret = apple_m1_smc_enumerate(smc);
 	if(ret < 0)
