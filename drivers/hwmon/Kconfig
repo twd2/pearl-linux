@@ -332,12 +332,13 @@ config SENSORS_AMD_ENERGY
 	  will be called as amd_energy.
 
 config SENSORS_APPLE_M1_SMC
-	tristate "Apple M1 SMC (temperature)"
+	tristate "Apple M1 SMC"
 	depends on ARCH_APPLE
 	help
 	  This driver provides support for the Apple System Management
-	  Controller found on the M1 SoC. It handles temperature sensors
-	  and interaction with the power supplies of the device.
+	  Controller found on the M1 SoC. It handles temperature
+	  sensors and interaction with the power supplies of the
+	  device, but also things like the built-in panel's backlight.
 
 config SENSORS_APPLESMC
 	tristate "Apple SMC (Motion sensor, light sensor, keyboard backlight)"
