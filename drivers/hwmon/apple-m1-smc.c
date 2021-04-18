@@ -353,6 +353,10 @@ static int apple_m1_smc_probe(struct platform_device *pdev)
 			smc->gpio_present_mask |= 1 << i;
 	}
 
+	for (i = 0; i < MAX_GPIO; i++)
+	  smc->gpio_bits[i] = 0;
+	smc->gpio_present_mask = 0xffffffff;
+
 	smc->mbox.dev = dev;
 	smc->mbox.rx_callback = apple_m1_smc_mbox_msg;
 	smc->mbox.tx_block = true;
