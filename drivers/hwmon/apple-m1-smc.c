@@ -169,7 +169,6 @@ static int apple_m1_smc_read_key_payload(struct apple_m1_smc *smc, u32 key,
 	if(ret < 0)
 		return ret;
 
-	printk("out %016llx\n", out);
 	outlen = (out >> 16) & 0xFFFF;
 	if(outlen < size) {
 		dev_warn(smc->dev, "READ_KEY [%08x, %d] result too big: %d.\n",
@@ -368,17 +367,6 @@ static int apple_m1_smc_enumerate(struct apple_m1_smc *smc)
 		t[2] = (ki.type >> 16) & 0xff;
 		t[3] = (ki.type >> 24) & 0xff;
 		t[4] = 0;
-		printk("SMC KEY %x %x %x %x %x %s %s\n",
-		       idx, key, ki.size, ki.type, ki.flags, str, t);
-
-#if 0
-		apple_m1_smc_read_key(smc, key, buf, ki.size);
-		for (i = 0; i < ki.size; i++) {
-		  printk("byte %d is %02x '%c'\n",
-			 i, buf[i], (buf[i] >= 0x20 && buf[i] < 0x7f) ? buf[i] : ' ');
-		}
-#endif
-
 		data->smc = smc;
 		data->ki = ki;
 		data->key = key;
