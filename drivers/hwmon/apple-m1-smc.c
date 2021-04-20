@@ -141,8 +141,6 @@ static int apple_m1_smc_cmd(struct apple_m1_smc *smc, u8 cmd, u16 hparam, u32 wp
 		if(cmd != SMC_GET_KEY_BY_INDEX) /* key enumeration would be noisy */
 			dev_warn(smc->dev, "command [%016llx] failed: %d.\n", msg[0], ret);
 		return -EIO;
-	} else {
-		dev_warn(smc->dev, "command [%016llx] succeeded: %d.\n", msg[0], ret);
 	}
 	return 0;
 }
@@ -326,13 +324,151 @@ static int apple_m1_smc_debugfs_key_show(struct seq_file *s, void *data_void)
 
 	apple_m1_smc_read_key(smc, key, buf, ki.size);
 	for (i = 0; i < ki.size; i++) {
-		seq_printf(s, "byte %d is %02x '%c'\n",
-			   i, buf[i], (buf[i] >= 0x20 && buf[i] < 0x7f) ? buf[i] : ' ');
+		seq_printf(s, "%s%02x",
+			   i ? " " : "",
+			   buf[i]);
 	}
+	seq_printf(s, "\n");
 	return 0;
 }
 
 DEFINE_SHOW_ATTRIBUTE(apple_m1_smc_debugfs_key);
+
+struct apple_m1_device_attribute {
+	struct device_attribute dev_attr;
+	struct apple_m1_smc *smc;
+	u32 key;
+	size_t size;
+	void *payload;
+	size_t payload_size;
+};
+
+static ssize_t apple_m1_smc_show(struct device *dev,
+				 struct device_attribute *attr,
+				 char *buf)
+{
+	struct apple_m1_device_attribute *m1_attr = container_of(attr, struct apple_m1_device_attribute, dev_attr);
+	struct apple_m1_smc *smc = m1_attr->smc;
+	int ret = apple_m1_smc_read_key(smc, m1_attr->key, buf, m1_attr->size);
+
+	if (ret < 0)
+		return ret;
+
+	return m1_attr->size;
+}
+
+static ssize_t apple_m1_smc_store(struct device *dev,
+				  struct device_attribute *attr,
+				  const char *buf,
+				  size_t count)
+{
+	struct apple_m1_device_attribute *m1_attr = container_of(attr, struct apple_m1_device_attribute, dev_attr);
+	struct apple_m1_smc *smc = m1_attr->smc;
+
+	int ret = apple_m1_smc_write_key(smc, m1_attr->key, buf, count);
+
+	if (ret < 0)
+		return ret;
+
+	return count;
+}
+
+static ssize_t apple_m1_smc_show_payload(struct device *dev,
+					 struct device_attribute *attr,
+					 char *buf)
+{
+	struct apple_m1_device_attribute *m1_attr = container_of(attr, struct apple_m1_device_attribute, dev_attr);
+	struct apple_m1_smc *smc = m1_attr->smc;
+	int ret;
+
+	if (m1_attr->payload == NULL)
+		return -EINVAL;
+
+	ret = apple_m1_smc_read_key_payload
+		(smc, m1_attr->key, m1_attr->payload, m1_attr->payload_size,
+		 buf, m1_attr->size);
+	
+	kfree(m1_attr->payload);
+	m1_attr->payload = NULL;
+
+	if (ret < 0)
+		return ret;
+
+	return m1_attr->size;
+}
+
+static ssize_t apple_m1_smc_store_payload(struct device *dev,
+					  struct device_attribute *attr,
+					  const char *buf,
+					  size_t count)
+{
+	struct apple_m1_device_attribute *m1_attr = container_of(attr, struct apple_m1_device_attribute, dev_attr);
+
+	if (m1_attr->payload != NULL)
+		return -EINVAL;
+
+	m1_attr->payload_size = count;
+	m1_attr->payload = devm_kmalloc(dev, count, GFP_KERNEL);
+	memcpy(m1_attr->payload, buf, count);
+
+	return count;
+}
+
+static struct apple_m1_device_attribute *
+apple_m1_smc_dev_attr(struct apple_m1_smc *smc,
+		      u32 key,
+		      char *type,
+		      u8 flags,
+		      size_t size)
+{
+	struct apple_m1_device_attribute *ret = devm_kmalloc
+		(smc->dev, sizeof *ret, GFP_KERNEL);
+	char *name = devm_kmalloc(smc->dev, 64, GFP_KERNEL);
+	ret->smc = smc;
+	ret->key = key;
+	ret->size = size;
+	sprintf(name, "%c%c%c%c.%s.%02x",
+		(key >> 24) & 0xff,
+		(key >> 16) & 0xff,
+		(key >>  8) & 0xff,
+		(key >>  0) & 0xff,
+		type, flags);
+	ret->dev_attr.attr.name = name;
+	ret->dev_attr.attr.mode = 0600;
+
+	ret->dev_attr.show = apple_m1_smc_show;
+	ret->dev_attr.store = apple_m1_smc_store;
+	ret->payload = NULL;
+	return ret;
+}
+
+static struct apple_m1_device_attribute *
+apple_m1_smc_payload_dev_attr(struct apple_m1_smc *smc,
+			      u32 key,
+			      char *type,
+			      u8 flags,
+			      size_t size)
+{
+	struct apple_m1_device_attribute *ret = devm_kmalloc
+		(smc->dev, sizeof *ret, GFP_KERNEL);
+	char *name = devm_kmalloc(smc->dev, 64, GFP_KERNEL);
+	ret->smc = smc;
+	ret->key = key;
+	ret->size = size;
+	sprintf(name, "%c%c%c%c.%s.%02x.payload",
+		(key >> 24) & 0xff,
+		(key >> 16) & 0xff,
+		(key >>  8) & 0xff,
+		(key >>  0) & 0xff,
+		type, flags);
+	ret->dev_attr.attr.name = name;
+	ret->dev_attr.attr.mode = 0600;
+
+	ret->dev_attr.show = apple_m1_smc_show_payload;
+	ret->dev_attr.store = apple_m1_smc_store_payload;
+	ret->payload = NULL;
+	return ret;
+}
 
 static int apple_m1_smc_enumerate(struct apple_m1_smc *smc)
 {
@@ -348,7 +484,6 @@ static int apple_m1_smc_enumerate(struct apple_m1_smc *smc)
 		char str[5];
 		char t[5];
 		struct apple_m1_smc_debugfs_data *data = kzalloc(sizeof *data, GFP_KERNEL);
-		u8 *buf;
 		ret = apple_m1_smc_get_key_by_index(smc, idx, &key);
 		if(ret)
 			break;
@@ -372,6 +507,15 @@ static int apple_m1_smc_enumerate(struct apple_m1_smc *smc)
 		data->key = key;
 		debugfs_create_file(str, 0400, smc->debugfs_dir,
 				    data, &apple_m1_smc_debugfs_key_fops);
+
+		device_create_file(smc->dev,
+				   &apple_m1_smc_dev_attr(smc, key,
+							  t, ki.flags,
+							  ki.size)->dev_attr);
+		device_create_file(smc->dev,
+				   &apple_m1_smc_payload_dev_attr(smc, key,
+								  t, ki.flags,
+								  ki.size)->dev_attr);
 	}
 
 	return 0;
