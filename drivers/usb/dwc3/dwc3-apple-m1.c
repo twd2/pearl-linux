@@ -136,14 +136,12 @@ static int dwc3_apple_m1_probe(struct platform_device *pdev)
 	ret = clk_bulk_get_all(da->dev, &da->clks);
 	if (ret < 0) {
 		pr_err("%pOFn: %s: clk_bulk_get_all failed.", np, __func__);
-		return ret;
 	}
 
 	da->num_clocks = ret;
 	ret = clk_bulk_prepare_enable(da->num_clocks, da->clks);
 	if (ret) {
 		pr_err("%pOFn: %s: clk_bulk_prepare_enable failed.", np, __func__);
-		return ret;
 	}
 
 	ret = dwc3_apple_m1_start(da);
