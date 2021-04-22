@@ -82,6 +82,7 @@ static int clk_apple_pmgr_gate_enable(struct clk_hw *hw)
 
 	pr_err("%s: failed to enable PMGR clock\n", clk->name);
 
+	return 0;
 	return -ETIMEDOUT;
 }
 
