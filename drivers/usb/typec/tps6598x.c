@@ -695,6 +695,7 @@ static int tps6598x_probe(struct i2c_client *client)
 	u32 pid;
 	u8 pstate;
 	int ret;
+	unsigned long flags;
 
 	tps = devm_kzalloc(&client->dev, sizeof(*tps), GFP_KERNEL);
 	if (!tps)
@@ -754,7 +755,6 @@ static int tps6598x_probe(struct i2c_client *client)
 		INIT_DELAYED_WORK(&tps->cd321x_status_work, tps6598x_cd321x_status_work);
 	}
 
-	unsigned long flags;
 	local_irq_save(flags);
 	if (pstate == TPS_POWER_STATE_BOOT) {
 		/* on Apple M1, this is how the CD3217/8 comes up; transition to S0 */
