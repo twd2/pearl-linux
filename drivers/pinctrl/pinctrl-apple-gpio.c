@@ -133,7 +133,8 @@ static void apple_gpio_init_reg(struct apple_gpio_pinctrl *pctl, unsigned pin)
 		pincfg->stat = 0;
 	} else {
 		pincfg->irqtype = reg & REG_GPIOx_IRQ_MASK;
-		pincfg->stat = PINCFG_STAT_IRQEN;
+		pincfg->stat = 0;
+		apple_gpio_refresh_reg(pctl, pin);
 	}
 }
 
