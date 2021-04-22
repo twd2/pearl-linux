@@ -44,7 +44,7 @@
 /* TPS_REG_INT_* bits */
 #define TPS_REG_INT_PLUG_EVENT		BIT(3)
 
-#define TPS_CD321X_INT_MASK		0x04c0000000000507ull
+#define TPS_CD321X_INT_MASK		0x04c000000000050full
 #define TPS_CD321X_INT_STATUS_CHG	BIT(8)
 #define TPS_CD321X_INT_DATA_STATUS_CHG	BIT(10)
 
@@ -743,7 +743,7 @@ static int tps6598x_probe(struct i2c_client *client)
 		return ret;
 
 	if(tps->cd321x_support) {
-		ret = tps6598x_write64(tps, TPS_REG_INT_MASK1, TPS_CD321X_INT_MASK);
+		ret = tps6598x_write64(tps, TPS_REG_INT_MASK1, 0);
 		if (ret)
 			dev_err(&client->dev, "failed to set default interrupt mask %d\n", 1);
 
@@ -849,6 +849,12 @@ static int tps6598x_probe(struct i2c_client *client)
 	}
 
 	i2c_set_clientdata(client, tps);
+
+	if(tps->cd321x_support) {
+		ret = tps6598x_write64(tps, TPS_REG_INT_MASK1, TPS_CD321X_INT_MASK);
+		if (ret)
+			dev_err(&client->dev, "failed to set default interrupt mask %d\n", 1);
+	}
 
 	local_irq_restore(flags);
 	return 0;
