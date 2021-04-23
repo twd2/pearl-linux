@@ -1082,16 +1082,21 @@
 	    #pwm-cells = <2>;
 	};
 
-	leds {
-	    compatible = "pwm-leds";
+    };
+    leds {
+        compatible = "pwm-leds";
 
-	    kbd-backlight {
-	        label = "kbd_backlight";
-		function = LED_FUNCTION_KBD_BACKLIGHT;
-		color = <LED_COLOR_ID_WHITE>;
-		pwms = <&fpwm0 0 1000>;
-		max-brightness = <255>;
-	    };
-	};
+        kbd-backlight {
+            label = "kbd_backlight";
+    	    function = LED_FUNCTION_KBD_BACKLIGHT;
+    	    color = <LED_COLOR_ID_WHITE>;
+    	    pwms = <&fpwm0 0 1000>;
+    	    max-brightness = <255>;
+        };
+    };
+
+    backlight {
+        compatible = "gpio-backlight";
+        gpios = <&smc 18 0>;
     };
 };
