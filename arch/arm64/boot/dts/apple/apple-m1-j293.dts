@@ -16,6 +16,10 @@
         serial0 = &uart0;
     };
 
+    adt {
+        contents = <0>;
+    };
+
     chosen {
         bootargs = "earlycon=apple_uart,0x235200000 console=tty0";
     };
@@ -54,6 +58,16 @@
             reg = <0x8 0x03400000 0x0 0x4000>;
             no-map;
         };
+
+	adt@80000000 {
+            reg = <0x8 0x00000000 0x0 0x4000>;
+            no-map;
+	};
+
+	bootargs@80000000 {
+            reg = <0x8 0x00000000 0x0 0x4000>;
+            no-map;
+	};
     };
 
     io-ranges {
