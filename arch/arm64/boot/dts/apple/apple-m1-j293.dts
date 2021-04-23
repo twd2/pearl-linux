@@ -1098,5 +1098,7 @@
     backlight {
         compatible = "gpio-backlight";
         gpios = <&smc 18 0>;
+	default-on;
+	status = "okay";
     };
 };

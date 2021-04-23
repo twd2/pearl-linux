@@ -242,7 +242,9 @@ static int apple_m1_smc_get(struct gpio_chip *chip, unsigned int offset)
 		return -ENODEV;
 
 	key = 0x67500000 | apple_m1_pack_hex(offset, 2); /* gP-- */
-	ret = apple_m1_smc_read_key(smc, key, &data, sizeof(data));
+	data = 1;
+	ret = apple_m1_smc_read_key_payload(smc, key, &data, sizeof(data),
+					    &data, sizeof(data));
 	if(ret < 0)
 		return ret;
 	return data & 1;
@@ -387,7 +389,7 @@ static ssize_t apple_m1_smc_show_payload(struct device *dev,
 	ret = apple_m1_smc_read_key_payload
 		(smc, m1_attr->key, m1_attr->payload, m1_attr->payload_size,
 		 buf, m1_attr->size);
-	
+
 	kfree(m1_attr->payload);
 	m1_attr->payload = NULL;
 
