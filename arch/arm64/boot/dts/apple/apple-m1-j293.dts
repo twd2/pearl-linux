@@ -223,12 +223,6 @@
             index = <0>;
         };
 
-        clk_VENC_SYS: clk_VENC_SYS@b97203968 {
-            #clock-cells = <0x00000000>;
-            clock-output-names = "clk_VENC_SYS";
-            compatible = "apple,pmgr-clk-gate";
-            reg = <0x00000000 0x3b702000 0x00000000 0x00000008>;
-        };
         gpio_clk: gpio_clk@23b700130 {
             compatible = "apple,pmgr-clk-gate";
             #clock-cells = <0>;
