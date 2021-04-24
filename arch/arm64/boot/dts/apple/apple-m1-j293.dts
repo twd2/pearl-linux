@@ -37,6 +37,7 @@
         stride = <7680>;
         width = <1920>;
         status = "okay";
+	backlight = <&backlight>;
     };
 
     reserved-memory {
@@ -1095,7 +1096,7 @@
         };
     };
 
-    backlight {
+    backlight: backlight {
         compatible = "gpio-backlight";
         gpios = <&smc 18 0>;
 	default-on;
