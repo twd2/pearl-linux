@@ -438,11 +438,11 @@ static int simplefb_probe(struct platform_device *pdev)
 		return -ENODEV;
 
 	ret = -ENODEV;
-	if (dev_get_platdata(&pdev->dev))
-		ret = simplefb_parse_pd(pdev, &params);
-	else if (pdev->dev.of_node)
 	params.backlight = NULL;
+	if (pdev->dev.of_node)
 		ret = simplefb_parse_dt(pdev, &params);
+	else if (dev_get_platdata(&pdev->dev))
+		ret = simplefb_parse_pd(pdev, &params);
 
 	if (ret)
 		return ret;
