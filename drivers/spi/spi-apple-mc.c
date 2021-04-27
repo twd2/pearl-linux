@@ -287,7 +287,7 @@ static int apple_spimc_transfer_one_message(struct spi_controller *master, struc
 
 		unsigned int delay = spi_delay_to_ns(&t->delay, t);
 		if (delay > 0)
-			udelay(delay+999/1000);
+			udelay((delay+999)/1000);
 		spi_delay_exec(&t->delay, t);
 
 		if(t->cs_change) {
