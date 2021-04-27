@@ -75,8 +75,10 @@ static int apple_reboot_probe(struct platform_device *pdev)
 		return err;
 	}
 
+#if 1 /* DISABLE_WDT */
 	writel(0, ar->base + REG_CTRL_0);
 	writel(0, ar->base + REG_CTRL_1);
+#endif
 
 	apple_reboot = ar;
 	return 0;
