@@ -60,6 +60,7 @@
 static struct aic_chip_data {
     void __iomem *base;
     struct irq_domain *domain;
+    struct irq_domain *domain_legacy;
     unsigned int num_irqs;
     bool fast_ipi;
 } aic;
@@ -295,21 +296,31 @@ static int __init apple_aic_init(struct device_node *node, struct device_node *i
     aic.fast_ipi = of_property_read_bool(node, "fast-ipi");
 
     aic.num_irqs = readl(aic.base + REG_ID_CONFIG) & 0xFFFF;
+    for(i=0; i<aic.num_irqs; i++)
+        writel(0, aic.base + REG_IRQ_AFFINITY(i));
     pr_info("Apple AIC: %d IRQs + 1 FIQ + 1 dummy + %d IPIs%s\n", aic.num_irqs, NUM_IPI, aic.fast_ipi ? " (fast)" : "");
 
-    for(i=0; i<aic.num_irqs; i++)
-        writel(1, aic.base + REG_IRQ_AFFINITY(i));
     for(i=0; i<aic.num_irqs; i+=32)
         writel(-1u, aic.base + REG_IRQ_DISABLE(i));
+    for(i=0; i<aic.num_irqs; i++)
+        writel(1, aic.base + REG_IRQ_AFFINITY(i));
     writel((readl(aic.base + REG_GLOBAL_CFG) & ~0xF00000) | 0x700000, aic.base + REG_GLOBAL_CFG);
 
     set_handle_irq(apple_aic_handle_irq);
     set_handle_fiq(apple_aic_handle_fiq);
 
-    apple_aic_cpu_prepare(0);
-
     aic.domain = irq_domain_add_linear(node, aic.num_irqs + 2 + NUM_IPI, &apple_aic_irq_domain_ops, &apple_aic_irq_chip);
     irq_set_default_host(aic.domain);
+
+#if 0
+#ifdef CONFIG_SMP
+    base_ipi = aic.num_irqs + 2;
+    aic.domain_legacy = irq_domain_add_legacy(node, NUM_IPI, base_ipi, aic.num_irqs + 2, &apple_aic_irq_domain_ops, &apple_aic_irq_chip_ipi);
+    set_smp_ipi_range(base_ipi, NUM_IPI);
+#endif
+
+#endif
+    apple_aic_cpu_prepare(0);
 
     return 0;
 }
