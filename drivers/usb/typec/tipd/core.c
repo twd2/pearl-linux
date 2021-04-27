@@ -446,7 +446,7 @@ static int tps6598x_dr_set(struct typec_port *port, enum typec_data_role role)
 	if (ret)
 		goto out_unlock;
 
-	if (role != TPS_STATUS_TO_TYPEC_DATAROLE(status)) {
+	if (role != TPS_STATUS_DATAROLE(status)) {
 		ret = -EPROTO;
 		goto out_unlock;
 	}
@@ -476,7 +476,7 @@ static int tps6598x_pr_set(struct typec_port *port, enum typec_role role)
 	if (ret)
 		goto out_unlock;
 
-	if (role != TPS_STATUS_TO_TYPEC_PORTROLE(status)) {
+	if (role != TPS_STATUS_PORTROLE(status)) {
 		ret = -EPROTO;
 		goto out_unlock;
 	}

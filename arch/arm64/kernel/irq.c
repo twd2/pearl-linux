@@ -71,28 +71,12 @@ static void init_irq_stacks(void)
 }
 #endif
 
-static void default_handle_irq(struct pt_regs *regs)
-{
-	panic("IRQ taken without a root IRQ handler\n");
-}
-
 static void default_handle_fiq(struct pt_regs *regs)
 {
 	panic("FIQ taken without a root FIQ handler\n");
 }
 
-void (*handle_arch_irq)(struct pt_regs *) __ro_after_init = default_handle_irq;
 void (*handle_arch_fiq)(struct pt_regs *) __ro_after_init = default_handle_fiq;
-
-int __init set_handle_irq(void (*handle_irq)(struct pt_regs *))
-{
-	if (handle_arch_irq != default_handle_irq)
-		return -EBUSY;
-
-	handle_arch_irq = handle_irq;
-	pr_info("Root IRQ handler: %ps\n", handle_irq);
-	return 0;
-}
 
 int __init set_handle_fiq(void (*handle_fiq)(struct pt_regs *))
 {
@@ -118,18 +102,4 @@ void __init init_IRQ(void)
 		WARN_ON(read_sysreg(daif) & PSR_A_BIT);
 		local_daif_restore(DAIF_PROCCTX_NOIRQ);
 	}
-}
-
-/*
- * Analogous to the generic handle_arch_irq / set_handle_irq
- */
-void (*handle_arch_fiq)(struct pt_regs *) __ro_after_init;
-
-int __init set_handle_fiq(void (*handle_fiq)(struct pt_regs *))
-{
-	if (handle_arch_fiq)
-		return -EBUSY;
-
-	handle_arch_fiq = handle_fiq;
-	return 0;
 }

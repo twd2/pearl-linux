@@ -311,14 +311,6 @@ static int __init apple_aic_init(struct device_node *node, struct device_node *i
     aic.domain = irq_domain_add_linear(node, aic.num_irqs + 2 + NUM_IPI, &apple_aic_irq_domain_ops, &apple_aic_irq_chip);
     irq_set_default_host(aic.domain);
 
-#ifdef CONFIG_SMP
-    base_ipi = aic.num_irqs + 2;
-    ret = irq_create_strict_mappings(aic.domain, base_ipi, aic.num_irqs + 2, NUM_IPI);
-    if(ret < 0)
-        pr_err("%s: irq_create_strict_mappings failed with %d\n", __func__, ret);
-    set_smp_ipi_range(base_ipi, NUM_IPI);
-#endif
-
     return 0;
 }
 
