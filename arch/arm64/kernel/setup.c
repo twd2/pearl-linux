@@ -30,6 +30,7 @@
 #include <linux/psci.h>
 #include <linux/sched/task.h>
 #include <linux/mm.h>
+#include <linux/libfdt.h>
 
 #include <asm/acpi.h>
 #include <asm/fixmap.h>
@@ -51,6 +52,11 @@
 #include <asm/xen/hypervisor.h>
 #include <asm/mmu_context.h>
 
+#if 1
+uint32_t fdt[] __attribute__((aligned(32))) =
+#include <../../../m1lli/asm-snippets/minimal-dt.dts.dtb.h>
+  ;
+#endif
 static int num_standard_resources;
 static struct resource *standard_resources;
 
@@ -185,6 +191,10 @@ asmlinkage void __init early_fdt_map(u64 dt_phys)
 
 static void __init setup_machine_fdt(phys_addr_t dt_phys)
 {
+	if (!dt_phys) {
+		early_init_dt_scan(fdt);
+		return;
+	}
 	int size;
 	void *dt_virt = fixmap_remap_fdt(dt_phys, &size, PAGE_KERNEL);
 	const char *name;
@@ -198,9 +208,6 @@ static void __init setup_machine_fdt(phys_addr_t dt_phys)
 			"The dtb must be 8-byte aligned and must not exceed 2 MB in size\n"
 			"\nPlease check your bootloader.",
 			&dt_phys, dt_virt);
-
-		while (true)
-			cpu_relax();
 	}
 
 	/* Early fixups are done, map the FDT as read-only now */
