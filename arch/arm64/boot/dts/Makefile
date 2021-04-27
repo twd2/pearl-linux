@@ -7,6 +7,7 @@ subdir-y += amd
 subdir-y += amlogic
 subdir-y += apple
 subdir-y += apm
+subdir-y += apple
 subdir-y += arm
 subdir-y += bitmain
 subdir-y += broadcom
