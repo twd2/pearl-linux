@@ -330,7 +330,6 @@ config ARCH_ZYNQMP
 
 config ARCH_APPLE
 	bool "Apple Silicon SoC Family"
-	select APPLE_AIC
 	select IOTYPE_RANGES
 	help
 	  This enables support for Apple processors present
