@@ -1485,7 +1485,7 @@ _modinst_:
 # boot script depmod is the master version.
 PHONY += _modinst_post
 _modinst_post: _modinst_
-	$(call cmd,depmod)
+	true
 
 ifeq ($(CONFIG_MODULE_SIG), y)
 PHONY += modules_sign
@@ -1772,7 +1772,7 @@ _emodinst_:
 
 PHONY += _emodinst_post
 _emodinst_post: _emodinst_
-	$(call cmd,depmod)
+	true
 
 compile_commands.json: $(extmod-prefix)compile_commands.json
 PHONY += compile_commands.json
