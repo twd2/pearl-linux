@@ -233,6 +233,8 @@ static void __exception_irq_entry aic_handle_irq(struct pt_regs *regs)
 {
 	struct aic_irq_chip *ic = aic_irqc;
 	u32 event, type, irq;
+	unsigned long flags;
+	local_irq_save(flags);
 
 	do {
 		/*
@@ -262,6 +264,7 @@ static void __exception_irq_entry aic_handle_irq(struct pt_regs *regs)
 		pr_err_ratelimited("vGIC IRQ fired and not handled by KVM, disabling.\n");
 		sysreg_clear_set_s(SYS_ICH_HCR_EL2, ICH_HCR_EN, 0);
 	}
+	local_irq_restore(flags);
 }
 
 static int aic_irq_set_affinity(struct irq_data *d,
