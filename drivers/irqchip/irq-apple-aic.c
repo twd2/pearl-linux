@@ -847,6 +847,7 @@ static int __init aic_of_ic_init(struct device_node *node, struct device_node *p
 			  "irqchip/apple-aic/ipi:starting",
 			  aic_init_cpu, NULL);
 
+	aic_ic_write(irqc, AIC_CONFIG, (aic_ic_read(irqc, AIC_CONFIG) & ~0xf00000) | 0x700000);
 	pr_info("Initialized with %d IRQs, %d FIQs, %d vIPIs\n",
 		irqc->nr_hw, AIC_NR_FIQ, AIC_NR_SWIPI);
 
