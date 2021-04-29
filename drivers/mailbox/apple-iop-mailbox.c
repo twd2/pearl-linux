@@ -906,6 +906,7 @@ static int apple_iop_mailbox_probe(struct platform_device *pdev)
 			dev_err(&pdev->dev, "failed to request IRQ %d\n", i);
 			return -EINVAL;
 		}
+		irq_set_status_flags(irq, IRQ_DISABLE_UNLAZY);
 	}
 
 	am->mbctrl.dev = &pdev->dev;

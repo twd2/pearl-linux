@@ -444,6 +444,7 @@ static int apple_m1_ans_probe(struct platform_device *pdev)
 
 	ans->irq_dom = irq_dom;
 	irq_set_chained_handler_and_data(ans->irq, apple_m1_ans_isr, ans);
+	irq_set_status_flags(ans->irq, IRQ_DISABLE_UNLAZY);
 	disable_irq(ans->irq);
 
 	err = apple_m1_ans_prepare(ans);
