@@ -1027,6 +1027,7 @@ static int apple_dart_iommu_probe(struct platform_device *pdev)
 	ret = devm_request_irq(&pdev->dev, irq, apple_dart_irq, 0, dev_name(&pdev->dev), im);
 	if(ret < 0)
 		return ret;
+	irq_set_status_flags(irq, IRQ_DISABLE_UNLAZY);
 
 	ret = iommu_device_sysfs_add(&im->iommu, dev, NULL, node->name);
 	if(ret)

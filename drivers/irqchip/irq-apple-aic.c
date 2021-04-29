@@ -215,7 +215,7 @@ static void aic_irq_unmask(struct irq_data *d)
 {
 	struct aic_irq_chip *ic = irq_data_get_irq_chip_data(d);
 
-	aic_ic_write(ic, AIC_MASK_CLR + MASK_REG(d->hwirq),
+	aic_ic_write(ic, AIC_MASK_CLR + MASK_REG(irqd_to_hwirq(d)),
 		     MASK_BIT(irqd_to_hwirq(d)));
 }
 
