@@ -1223,7 +1223,7 @@ static int pcie_apple_m1_probe(struct platform_device *pdev)
 		pcie->msi[i].pcie = pcie;
 		pcie->msi[i].virq = virq[i];
 		irq_set_chained_handler_and_data(virq[i], pcie_apple_m1_msi_isr, &pcie->msi[i]);
-		disable_irq(virq[i]);
+		irq_set_status_flags(virq[i], IRQ_DISABLE_UNLAZY);
 	}
 
 	intx_node = of_get_next_child(node, NULL);
