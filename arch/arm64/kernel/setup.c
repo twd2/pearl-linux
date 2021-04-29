@@ -54,7 +54,7 @@
 
 #if 1
 uint32_t fdt[] __attribute__((aligned(32))) =
-#include <../../../m1lli/asm-snippets/minimal-dt.dts.dtb.h>
+#include <../../../m1lli/asm-snippets/maximal-dt.dts.dtb.h>
   ;
 #endif
 static int num_standard_resources;
@@ -322,6 +322,7 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
 	early_fixmap_init();
 	early_ioremap_init();
 
+	__fdt_pointer = 0;
 	setup_machine_fdt(__fdt_pointer);
 
 	/*
