@@ -48,6 +48,7 @@
 #include <linux/bits.h>
 #include <linux/bitfield.h>
 #include <linux/cpuhotplug.h>
+#include <linux/delay.h>
 #include <linux/io.h>
 #include <linux/irqchip.h>
 #include <linux/irqdomain.h>
@@ -826,6 +827,10 @@ static int __init aic_of_ic_init(struct device_node *node, struct device_node *p
 	irqc->hw_domain = irq_domain_create_linear(of_node_to_fwnode(node),
 						   irqc->nr_hw + AIC_NR_FIQ,
 						   &aic_irq_domain_ops, irqc);
+
+	for (i = 0; i < irqc->nr_hw; i++)
+		irq_set_status_flags(i, IRQ_DISABLE_UNLAZY);
+	irq_set_default_host(irqc->hw_domain);
 	if (WARN_ON(!irqc->hw_domain)) {
 		iounmap(irqc->base);
 		kfree(irqc);
