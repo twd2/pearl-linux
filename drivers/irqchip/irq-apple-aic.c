@@ -791,6 +791,17 @@ static int aic_init_cpu(unsigned int cpu)
 	return 0;
 }
 
+void apple_aic_cpu_prepare(unsigned int cpu)
+{
+	struct aic_irq_chip *irqc = aic_irqc;
+	unsigned i;
+
+	for (i = 0; i < irqc->nr_hw; i++)
+		aic_ic_write(irqc, AIC_TARGET_CPU + i * 4,
+			     (aic_ic_read(irqc, AIC_TARGET_CPU + i * 4) |
+			      BIT(cpu)));
+}
+
 static int __init aic_of_ic_init(struct device_node *node, struct device_node *parent)
 {
 	int i;
