@@ -1098,6 +1098,7 @@ static int brcmf_pcie_request_irq(struct brcmf_pciedev_info *devinfo)
 		brcmf_err(bus, "Failed to request IRQ %d\n", pdev->irq);
 		return -EIO;
 	}
+	irq_set_status_flags(pdev->irq, IRQ_DISABLE_UNLAZY);
 	devinfo->irq_allocated = true;
 	return 0;
 }
