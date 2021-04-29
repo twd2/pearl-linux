@@ -326,6 +326,7 @@ static int pcie_apple_m1_intx_map(struct irq_domain *domain, unsigned int irq, i
 	irq_set_chip_and_handler(irq, &pcie_apple_m1_intx_chip, handle_level_irq);
 	irq_set_chip_data(irq, domain->host_data);
 	irq_set_status_flags(irq, IRQ_LEVEL);
+	irq_set_status_flags(irq, IRQ_DISABLE_UNLAZY);
 
 	return 0;
 }
@@ -378,9 +379,11 @@ static int pcie_apple_m1_irq_domain_alloc(struct irq_domain *dom, unsigned int v
 		return -ENOSPC;
 	}
 
-	for(idx=0; idx<nr_irqs; idx++)
+	for(idx=0; idx<nr_irqs; idx++) {
 		irq_domain_set_info(dom, virq + idx, pos + idx + pcie->msi_per_port * port,
 				&pcie_apple_m1_msi_chip, pcie, handle_edge_irq, NULL, NULL);
+		irq_set_status_flags(virq + idx, IRQ_DISABLE_UNLAZY);
+	}
 
 	return 0;
 }
@@ -1191,11 +1194,13 @@ static int pcie_apple_m1_probe(struct platform_device *pdev)
 			dev_err(dev, "failed to map port IRQ %d\n", i);
 			return -EINVAL;
 		}
+		irq_set_status_flags(pirq, IRQ_DISABLE_UNLAZY);
 		pcie->port[i].pcie = pcie;
 	}
 
 	for(i=0; i<NUM_MSI; i++) {
 		virq[i] = platform_get_irq(pdev, pcie->num_port + i);
+		irq_set_status_flags(virq[i], IRQ_DISABLE_UNLAZY);
 		if(virq[i] < 0) {
 			dev_err(dev, "failed to map MSI IRQ %d\n", i);
 			return -EINVAL;
@@ -1236,8 +1241,10 @@ static int pcie_apple_m1_probe(struct platform_device *pdev)
 		}
 	}
 
-	for(i=0; i<pcie->num_port; i++)
+	for(i=0; i<pcie->num_port; i++) {
 		irq_set_chained_handler_and_data(pirq, pcie_apple_m1_portirq_isr, &pcie->port[i]);
+		irq_set_status_flags(pirq, IRQ_DISABLE_UNLAZY);
+	}
 
 	for(i=0; i<3; i++) {
 		ret = clk_prepare_enable(pcie->clk[i]);
