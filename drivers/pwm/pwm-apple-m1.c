@@ -123,9 +123,14 @@ static int fpwm_remove(struct platform_device *pdev)
 {
 	struct fpwm_chip *fpwm = platform_get_drvdata(pdev);
 
+	int ret = pwmchip_remove(&fpwm->chip);
+
+	if (IS_ERR(ret))
+	  return PTR_ERR(ret);
+
 	clk_disable_unprepare(fpwm->clk);
 
-	return pwmchip_remove(&fpwm->chip);
+	return 0;
 }
 
 #ifdef CONFIG_OF
