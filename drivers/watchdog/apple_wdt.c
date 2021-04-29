@@ -53,6 +53,8 @@ static int apple_wdt_ping(struct watchdog_device *w)
 static int apple_wdt_set_timeout(struct watchdog_device *w, unsigned int s)
 {
 	struct apple_wdt *wdt = watchdog_get_drvdata(w);
+	if (s > U32_MAX / WDT_FREQ)
+		s = U32_MAX / WDT_FREQ;
 	writel(s * WDT_FREQ, wdt->base + WDT_COMPARATOR);
 	return 0;
 }
@@ -65,12 +67,22 @@ static unsigned int apple_wdt_get_timeleft(struct watchdog_device *w)
 	return (comparator - count) / WDT_FREQ;
 }
 
+static int apple_wdt_restart(struct watchdog_device *wd, unsigned long mode,
+			     void *cmd)
+{
+	apple_wdt_set_timeout(wd, 0);
+	apple_wdt_start(wd);
+
+	return 0;
+}
+
 static struct watchdog_ops apple_wdt_ops = {
 	.start = apple_wdt_start,
 	.stop = apple_wdt_stop,
 	.ping = apple_wdt_ping,
 	.set_timeout = apple_wdt_set_timeout,
 	.get_timeleft = apple_wdt_get_timeleft,
+	.restart = apple_wdt_restart,
 };
 
 static struct watchdog_info apple_wdt_info = {
@@ -94,7 +106,6 @@ static int apple_wdt_probe(struct platform_device *pdev)
 	wdt->clk = devm_clk_get(dev, NULL);
 	if (IS_ERR(wdt->clk))
 		wdt->clk = NULL;
-	//return PTR_ERR(wdt->clk);
 	if (wdt->clk) {
 		ret = clk_prepare_enable(wdt->clk);
 		if (ret)
@@ -111,7 +122,8 @@ static int apple_wdt_probe(struct platform_device *pdev)
 		return ret;
 	watchdog_set_drvdata(wd, wdt);
 
-	printk("successfully registered watchdog\n");
+	apple_wdt_stop(wd);
+
 	return 0;
 }
 
@@ -123,15 +135,6 @@ static int apple_wdt_remove(struct platform_device *pdev)
 	watchdog_unregister_device(wd);
 	if (wdt->clk)
 		clk_disable_unprepare(wdt->clk);
-
-	return 0;
-}
-
-static int apple_wdt_restart(struct watchdog_device *wd, unsigned long mode,
-			     void *cmd)
-{
-	apple_wdt_set_timeout(wd, 0);
-	apple_wdt_start(wd);
 
 	return 0;
 }
