@@ -291,7 +291,7 @@ static int aic_irq_set_type(struct irq_data *d, unsigned int type)
 	 * Some IRQs (e.g. MSIs) implicitly have edge semantics, and we don't
 	 * have a way to find out the type of any given IRQ, so just allow both.
 	 */
-	return (type == IRQ_TYPE_LEVEL_HIGH || type == IRQ_TYPE_EDGE_RISING) ? 0 : -EINVAL;
+	return (type == IRQ_TYPE_LEVEL_HIGH || type == IRQ_TYPE_EDGE_RISING) ? 0 : 0;
 }
 
 static struct irq_chip aic_chip = {
