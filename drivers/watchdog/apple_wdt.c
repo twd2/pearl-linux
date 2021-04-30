@@ -13,6 +13,7 @@
 #include <linux/platform_device.h>
 #include <linux/watchdog.h>
 #include <linux/slab.h>
+#include <linux/reboot.h>
 
 #define WDT_FREQ	(24 * 1000 * 1000)
 #define WDT_COUNT	0x10
@@ -23,6 +24,7 @@
 struct apple_wdt {
 	void __iomem *base;
 	struct clk *clk;
+	struct notifier_block nb;
 };
 
 static int apple_wdt_start(struct watchdog_device *w)
@@ -67,11 +69,14 @@ static unsigned int apple_wdt_get_timeleft(struct watchdog_device *w)
 	return (comparator - count) / WDT_FREQ;
 }
 
-static int apple_wdt_restart(struct watchdog_device *wd, unsigned long mode,
+static int apple_wdt_restart(struct notifier_block *nb, unsigned long mode,
 			     void *cmd)
 {
-	apple_wdt_set_timeout(wd, 0);
-	apple_wdt_start(wd);
+	struct apple_wdt *wdt = container_of(nb, struct apple_wdt, nb);
+	writel(0, wdt->base + WDT_COUNT);
+	writel(U32_MAX, wdt->base + WDT_COMPARATOR);
+	writel(WDT_CONTROL_TRIGGER, wdt->base + WDT_CONTROL);
+	writel(0, wdt->base + WDT_COMPARATOR);
 
 	return 0;
 }
@@ -82,7 +87,6 @@ static struct watchdog_ops apple_wdt_ops = {
 	.ping = apple_wdt_ping,
 	.set_timeout = apple_wdt_set_timeout,
 	.get_timeleft = apple_wdt_get_timeleft,
-	.restart = apple_wdt_restart,
 };
 
 static struct watchdog_info apple_wdt_info = {
@@ -122,6 +126,13 @@ static int apple_wdt_probe(struct platform_device *pdev)
 		return ret;
 	watchdog_set_drvdata(wd, wdt);
 
+	wdt->nb.notifier_call = apple_wdt_restart;
+	wdt->nb.priority = 128;
+
+	ret = register_restart_handler(&wdt->nb);
+	if (ret < 0) {
+		wdt->nb.notifier_call = NULL;
+	}
 	apple_wdt_stop(wd);
 
 	return 0;
@@ -135,6 +146,11 @@ static int apple_wdt_remove(struct platform_device *pdev)
 	watchdog_unregister_device(wd);
 	if (wdt->clk)
 		clk_disable_unprepare(wdt->clk);
+
+#if 0
+	if (wdt->nb.notifier_call)
+		unregister_restart_handler(&wdt->nb);
+#endif
 
 	return 0;
 }
