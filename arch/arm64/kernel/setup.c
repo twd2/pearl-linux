@@ -193,6 +193,7 @@ asmlinkage void __init early_fdt_map(u64 dt_phys)
 #define APPLE_BA_DTREE_SIZE 0x68
 #define APPLE_BA_VIRT_BASE  0x08
 #define APPLE_BA_PHYS_BASE  0x10
+#define APPLE_BA_KERNEL_TOM 0x20
 
 static void fixup_fdt(void *fdt, size_t size, u64 bootargs)
 {
@@ -202,6 +203,7 @@ static void fixup_fdt(void *fdt, size_t size, u64 bootargs)
 		   (*(uint64_t *)(ba_virt + APPLE_BA_VIRT_BASE)) +
 		   (*(uint64_t *)(ba_virt + APPLE_BA_PHYS_BASE)));
 	u64 adtsize = (*(uint32_t *)(ba_virt + APPLE_BA_DTREE_SIZE));
+	u64 ksize = (*(uint64_t *)(ba_virt + APPLE_BA_KERNEL_TOM));
 #else
 	u64 adt = 0;
 	u64 adtsize = 0;
@@ -221,6 +223,12 @@ static void fixup_fdt(void *fdt, size_t size, u64 bootargs)
 			p2[1] = cpu_to_be32(adt&0xffffffff);
 			p2[2] = cpu_to_be32(adtsize >> 32);
 			p2[3] = cpu_to_be32(adtsize&0xffffffff);
+		} else if (strcmp(p, "kmemgoeshere!!!") == 0) {
+			u32 *p2 = (u32 *)p;
+			p2[0] = cpu_to_be32(0x8);
+			p2[1] = cpu_to_be32(0);
+			p2[2] = cpu_to_be32((ksize >> 32) - 8);
+			p2[3] = cpu_to_be32(ksize&0xffffffff);
 		}
 }
 
