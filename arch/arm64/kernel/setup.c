@@ -189,33 +189,38 @@ asmlinkage void __init early_fdt_map(u64 dt_phys)
 	early_fdt_ptr = fixmap_remap_fdt(dt_phys, &fdt_size, PAGE_KERNEL);
 }
 
-#define APPLE_BA_DTREE_VIRT 0x68
-#define APPLE_BA_DTREE_SIZE 0x70
+#define APPLE_BA_DTREE_VIRT 0x60
+#define APPLE_BA_DTREE_SIZE 0x68
 #define APPLE_BA_VIRT_BASE  0x08
 #define APPLE_BA_PHYS_BASE  0x10
 
 static void fixup_fdt(void *fdt, size_t size, u64 bootargs)
 {
+#if 1
 	void *ba_virt = fixmap_remap_bootargs(bootargs, PAGE_KERNEL);
 	u64 adt = ((*(uint64_t *)(ba_virt + APPLE_BA_DTREE_VIRT)) -
 		   (*(uint64_t *)(ba_virt + APPLE_BA_VIRT_BASE)) +
 		   (*(uint64_t *)(ba_virt + APPLE_BA_PHYS_BASE)));
 	u64 adtsize = (*(uint32_t *)(ba_virt + APPLE_BA_DTREE_SIZE));
+#else
+	u64 adt = 0;
+	u64 adtsize = 0;
+#endif
 
 	char *p;
 	for (p = fdt; (void *)p < fdt + size; p++)
 		if (strcmp(p, "bootargsgohere!") == 0) {
 			u32 *p2 = (u32 *)p;
-			p2[0] = (bootargs>>32);
-			p2[1] = (bootargs&0xffffffff);
-			p2[2] = 0;
-			p2[3] = 0x4000;
+			p2[0] = cpu_to_be32(bootargs>>32);
+			p2[1] = cpu_to_be32(bootargs&0xffffffff);
+			p2[2] = cpu_to_be32(0);
+			p2[3] = cpu_to_be32(0x8000);
 		} else if (strcmp(p, "adtgoeshere!!!!") == 0) {
 			u32 *p2 = (u32 *)p;
-			p2[0] = (adt>>32);
-			p2[1] = (adt&0xffffffff);
-			p2[2] = (adtsize >> 32);
-			p2[3] = (adtsize&0xffffffff);
+			p2[0] = cpu_to_be32(adt>>32);
+			p2[1] = cpu_to_be32(adt&0xffffffff);
+			p2[2] = cpu_to_be32(adtsize >> 32);
+			p2[3] = cpu_to_be32(adtsize&0xffffffff);
 		}
 }
 
@@ -353,7 +358,6 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
 	early_fixmap_init();
 	early_ioremap_init();
 
-	__fdt_pointer = 0;
 	setup_machine_fdt(__fdt_pointer);
 
 	/*
