@@ -345,6 +345,42 @@ struct apple_m1_device_attribute {
 	size_t payload_size;
 };
 
+static int decode_percentage_float(u32 f)
+{
+	u32 exp = f >> 22;
+	u32 mantissa = f & ((1 << 22) - 1);
+	if (mantissa == 0)
+		return 0;
+	mantissa += 1 << 22;
+	int ret = mantissa;
+	while (exp > 0x80 - 21) {
+		ret /= 2;
+		exp--;
+	}
+	return ret;
+}
+
+int apple_m1_smc_read_percentage(struct device *dev, int *percentage)
+{
+	u32 buf;
+	int ret;
+	struct platform_device *pdev = to_platform_device(dev);
+	struct resource *resource = platform_get_resource(pdev,
+							  IORESOURCE_MEM,
+							  0);
+	u32 key = resource->start;
+
+	ret = apple_m1_smc_read_key(apple_m1_smc_instance,
+				    key, buf, sizeof(buf));
+
+	if (ret < 0)
+		return ret;
+
+	*percentage = decode_percentage_float(buf);
+
+	return 0;
+}
+
 static ssize_t apple_m1_smc_show(struct device *dev,
 				 struct device_attribute *attr,
 				 char *buf)
