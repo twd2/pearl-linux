@@ -162,9 +162,11 @@ static int simplefb_parse_dt(struct platform_device *pdev,
 		return -EINVAL;
 	}
 
+#if IS_ENABLED(CONFIG_FB_BACKLIGHT)
 	backlight = devm_of_find_backlight(&pdev->dev);
 	if (!IS_ERR(backlight))
 		params->backlight = backlight;
+#endif
 
 	return 0;
 }
