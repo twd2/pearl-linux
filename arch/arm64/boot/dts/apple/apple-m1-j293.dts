@@ -1,5 +1,44 @@
 /dts-v1/;
 
+#define ASCII_A 0x41
+#define ASCII_B 0x42
+#define ASCII_C 0x43
+#define ASCII_D 0x44
+#define ASCII_E 0x45
+#define ASCII_F 0x46
+#define ASCII_G 0x47
+#define ASCII_H 0x48
+#define ASCII_I 0x49
+#define ASCII_J 0x4a
+#define ASCII_K 0x4b
+#define ASCII_L 0x4c
+#define ASCII_M 0x4d
+#define ASCII_N 0x4e
+#define ASCII_O 0x4f
+#define ASCII_P 0x50
+#define ASCII_Q 0x51
+#define ASCII_R 0x52
+#define ASCII_S 0x53
+#define ASCII_T 0x54
+#define ASCII_U 0x55
+#define ASCII_V 0x56
+#define ASCII_W 0x57
+#define ASCII_X 0x58
+#define ASCII_Y 0x59
+#define ASCII_Z 0x5a
+#define ASCII_0 0x30
+#define ASCII_1 0x31
+#define ASCII_2 0x32
+#define ASCII_3 0x33
+#define ASCII_4 0x34
+#define ASCII_5 0x35
+#define ASCII_6 0x36
+#define ASCII_7 0x37
+#define ASCII_8 0x38
+#define ASCII_9 0x39
+
+#define SMC(A,B,C,D) (((ASCII_##A)<<24)|((ASCII_##B)<<16)|((ASCII_##C)<<8)|((ASCII_##D)))
+
 #include <dt-bindings/leds/common.h>
 
 / {
@@ -868,6 +907,25 @@
 
             nvmem = <&sysctrl>;
             nvmem-poweroff = <0x1 0xff 0x00   0x3 0xff 0x00   0xf 0x2f 0x08>;
+
+	    #address-cells = <1>;
+	    #size-cells = <0>;
+
+	    /* percentage battery charge */
+	    smc_SBAS {
+	    	compatible = "apple,battery";
+	    	reg = <SMC(S,B,A,S)>;
+	    };
+
+	    /* power button */
+	    smc_MBSW {
+	        reg = <SMC(M,S,W,B)>;
+	    };
+
+	    /* lid switch */
+	    smc_MSLD {
+	    	reg = <SMC(M,S,L,D)>;
+	    };
         };
 
         pcie: pcie@690000000 {
