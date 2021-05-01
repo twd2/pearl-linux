@@ -28,7 +28,6 @@ config ARCH_ALPINE
 
 config ARCH_APPLE
 	bool "Apple Silicon SoC family"
-	select APPLE_AIC
 	help
 	  This enables support for Apple's in-house ARM SoC family, starting
 	  with the Apple M1.
@@ -325,12 +324,5 @@ config ARCH_ZYNQMP
 	bool "Xilinx ZynqMP Family"
 	help
 	  This enables support for Xilinx ZynqMP Family
-
-config ARCH_APPLE
-	bool "Apple Silicon SoC Family"
-	select IOTYPE_RANGES
-	help
-	  This enables support for Apple processors present
-	  on Mac computers.
 
 endmenu
