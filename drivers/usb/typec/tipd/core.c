@@ -769,8 +769,6 @@ static int tps6598x_probe(struct i2c_client *client)
 					IRQF_SHARED | IRQF_ONESHOT,
 					dev_name(&client->dev), tps);
 
-	return ret;
-
 	ret = tps6598x_read32(tps, TPS_REG_VID, &vid);
 	if (ret < 0 || !vid)
 		return -ENODEV;
