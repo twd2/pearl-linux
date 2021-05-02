@@ -347,17 +347,14 @@ struct apple_m1_device_attribute {
 
 static int decode_percentage_float(u32 f)
 {
-	u32 exp = f >> 22;
-	u32 mantissa = f & ((1 << 22) - 1);
+	u32 exp = f >> 23;
+	u32 mantissa = f & ((1 << 23) - 1);
 	if (mantissa == 0)
 		return 0;
-	mantissa += 1 << 22;
+	mantissa += (1 << 23);
 	int ret = mantissa;
-	while (exp > 0x80 - 21) {
-		ret /= 2;
-		exp--;
-	}
-	return ret;
+	mantissa >>= 17 + (0x85 - exp);
+	return mantissa;
 }
 
 int apple_m1_smc_read_percentage(struct device *dev, int *percentage)
@@ -365,13 +362,11 @@ int apple_m1_smc_read_percentage(struct device *dev, int *percentage)
 	u32 buf;
 	int ret;
 	struct platform_device *pdev = to_platform_device(dev);
-	struct resource *resource = platform_get_resource(pdev,
-							  IORESOURCE_MEM,
-							  0);
-	u32 key = resource->start;
+	u32 key;
+	of_property_read_u32(dev->of_node, "reg", &key);
 
 	ret = apple_m1_smc_read_key(apple_m1_smc_instance,
-				    key, buf, sizeof(buf));
+				    be32_to_cpu(key), &buf, sizeof(buf));
 
 	if (ret < 0)
 		return ret;
@@ -680,6 +675,7 @@ static int apple_m1_smc_probe(struct platform_device *pdev)
 		pm_power_off = apple_m1_smc_power_off;
 	}
 
+	ret = of_platform_populate(dev->of_node, NULL, NULL, dev);
 	return 0;
 }
 

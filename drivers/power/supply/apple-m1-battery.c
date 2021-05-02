@@ -64,8 +64,11 @@ static int apple_battery_probe(struct platform_device *pdev)
 	if (batt == NULL)
 		return -ENOMEM;
 
+	cfg->of_node = pdev->dev.of_node;
+	cfg->fwnode = pdev->dev.fwnode;
+	cfg->drv_data = batt;
 	batt->pdev = pdev;
-	batt->psy = power_supply_register(dev, &desc, cfg);
+	batt->psy = devm_power_supply_register(dev, &desc, cfg);
 
 	if (IS_ERR(batt->psy))
 		return PTR_ERR(batt->psy);
