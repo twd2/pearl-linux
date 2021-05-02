@@ -366,7 +366,7 @@ int apple_m1_smc_read_percentage(struct device *dev, int *percentage)
 	of_property_read_u32(dev->of_node, "reg", &key);
 
 	ret = apple_m1_smc_read_key(apple_m1_smc_instance,
-				    be32_to_cpu(key), &buf, sizeof(buf));
+				    key, &buf, sizeof(buf));
 
 	if (ret < 0)
 		return ret;
