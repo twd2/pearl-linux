@@ -731,7 +731,7 @@ static int tps6598x_probe(struct i2c_client *client)
 		return PTR_ERR(tps->regmap);
 
 	/*
-	 * Checking can the adapter handle SMBus protocol. If it can not, the
+	 * Checking can the adapter handle SMBus protocol. If it cannot, the
 	 * driver needs to take care of block reads separately.
 	 *
 	 * FIXME: Testing with I2C_FUNC_I2C. regmap-i2c uses I2C protocol
@@ -747,15 +747,6 @@ static int tps6598x_probe(struct i2c_client *client)
 	if (device_property_read_bool(&client->dev, "just-init"))
 		tps->just_init = true;
 
-	ret = tps6598x_read32(tps, TPS_REG_VID, &vid);
-	if (ret < 0 || !vid)
-		return -ENODEV;
-
-	ret = tps6598x_read32(tps, TPS_REG_PID, &pid);
-	if (ret < 0)
-		return -ENODEV;
-	tps->product_id = pid;
-
 	if (tps->just_init) {
 		ret = devm_request_threaded_irq(&client->dev, client->irq, NULL,
 						tps6598x_interrupt,
@@ -764,6 +755,15 @@ static int tps6598x_probe(struct i2c_client *client)
 
 		return ret;
 	}
+
+	ret = tps6598x_read32(tps, TPS_REG_VID, &vid);
+	if (ret < 0 || !vid)
+		return -ENODEV;
+
+	ret = tps6598x_read32(tps, TPS_REG_PID, &pid);
+	if (ret < 0)
+		return -ENODEV;
+	tps->product_id = pid;
 
 	/* Make sure the controller has application firmware running */
 	ret = tps6598x_check_mode(tps);
