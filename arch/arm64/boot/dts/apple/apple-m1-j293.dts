@@ -407,6 +407,7 @@
                 interrupts = <106 8>;
 
                 no-long-writes;
+		just-init;
             };
 
             hpm1: hpm1@3f {
