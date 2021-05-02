@@ -726,6 +726,9 @@ static int tps6598x_probe(struct i2c_client *client)
 	mutex_init(&tps->lock);
 	tps->dev = &client->dev;
 
+	if (device_property_read_bool(&client->dev, "just-init"))
+		tps->just_init = true;
+
 	tps->regmap = devm_regmap_init_i2c(client, &tps6598x_regmap_config);
 	if (IS_ERR(tps->regmap))
 		return PTR_ERR(tps->regmap);
@@ -744,17 +747,29 @@ static int tps6598x_probe(struct i2c_client *client)
 	if (device_property_read_bool(&client->dev, "no-long-writes"))
 		tps->i2c_no_long = true;
 
-	if (device_property_read_bool(&client->dev, "just-init"))
-		tps->just_init = true;
-
 	if (tps->just_init) {
+		printk("Just performing basic initialization!\n");
 		ret = devm_request_threaded_irq(&client->dev, client->irq, NULL,
-						tps6598x_interrupt,
-						IRQF_SHARED | IRQF_ONESHOT,
-						dev_name(&client->dev), tps);
+					tps6598x_interrupt,
+					IRQF_SHARED | IRQF_ONESHOT,
+					dev_name(&client->dev), tps);
 
-		return ret;
+		return ret = 0;
 	}
+	ret = tps6598x_write64(tps, TPS_REG_INT_MASK1, 0);
+	if (ret)
+		dev_err(&client->dev, "failed to set default interrupt mask %d\n", 1);
+
+	ret = tps6598x_write64(tps, TPS_REG_INT_MASK2, 0);
+	if (ret)
+		dev_err(&client->dev, "failed to set default interrupt mask %d\n", 2);
+
+	ret = devm_request_threaded_irq(&client->dev, client->irq, NULL,
+					tps6598x_interrupt,
+					IRQF_SHARED | IRQF_ONESHOT,
+					dev_name(&client->dev), tps);
+
+	return ret;
 
 	ret = tps6598x_read32(tps, TPS_REG_VID, &vid);
 	if (ret < 0 || !vid)
