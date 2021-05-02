@@ -1033,9 +1033,8 @@ static int apple_dart_iommu_probe(struct platform_device *pdev)
 	if(ret)
 		return ret;
 
-	iommu_device_set_ops(&im->iommu, &apple_dart_iommu_ops);
-	iommu_device_set_fwnode(&im->iommu, fwnode);
-	ret = iommu_device_register(&im->iommu);
+	ret = iommu_device_register(&im->iommu, &apple_dart_iommu_ops,
+				    &pdev->dev);
 	if(ret)
 		return ret;
 
