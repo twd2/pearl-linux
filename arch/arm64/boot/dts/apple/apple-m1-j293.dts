@@ -37,7 +37,7 @@
 #define ASCII_8 0x38
 #define ASCII_9 0x39
 
-#define SMC(A,B,C,D) (((ASCII_##A)<<24)|((ASCII_##B)<<16)|((ASCII_##C)<<8)|((ASCII_##D)))
+#define SMC(A,B,C,D) <(((ASCII_##A)<<24)|((ASCII_##B)<<16)|((ASCII_##C)<<8)|((ASCII_##D))) 1>
 
 #include <dt-bindings/leds/common.h>
 
@@ -918,22 +918,22 @@
             nvmem-poweroff = <0x1 0xff 0x00   0x3 0xff 0x00   0xf 0x2f 0x08>;
 
 	    #address-cells = <1>;
-	    #size-cells = <0>;
+	    #size-cells = <1>;
 
 	    /* percentage battery charge */
 	    smc_SBAS {
 	    	compatible = "apple,battery";
-	    	reg = <SMC(S,B,A,S)>;
+	    	reg = SMC(S,B,A,S);
 	    };
 
 	    /* power button */
 	    smc_MBSW {
-	        reg = <SMC(M,S,W,B)>;
+	        reg = SMC(M,S,W,B);
 	    };
 
 	    /* lid switch */
 	    smc_MSLD {
-	    	reg = <SMC(M,S,L,D)>;
+	    	reg = SMC(M,S,L,D);
 	    };
         };
 
