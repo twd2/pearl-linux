@@ -45,7 +45,7 @@
     model = "Mac Mini Late 2020";
     compatible = "apple,m1";
 
-    hardware-model = "J274";
+    hardware-model = "J293";
 
     interrupt-parent = <&aic>;
     #address-cells = <2>;
@@ -76,7 +76,7 @@
 		stride = <0x2800>;
 		width = <0xa00>;
 		status = "okay";
-		backlight = <0x02>;
+		backlight = <&backlight>;
 	};
 
     reserved-memory {
@@ -400,6 +400,15 @@
             #address-cells = <0x1>;
             #size-cells = <0x0>;
 
+            hpm0: hpm0@38 {
+                compatible = "ti,tps6598x";
+                reg = <0x38>;
+                interrupt-parent = <0x0c>;
+                interrupts = <106 8>;
+
+                no-long-writes;
+            };
+
             hpm1: hpm1@3f {
                 compatible = "ti,tps6598x";
                 reg = <0x3f>;
@@ -658,13 +667,13 @@
                 port@0 {
                     reg = <0>;
                     typec1_phy_ss: endpoint {
-                        remote-endpoint = <&typec1_con_ss>;
+		        phandle = <0x0e>;
                     };
                 };
                 port@1 {
                     reg = <1>;
                     typec1_pipe_ss: endpoint {
-                        remote-endpoint = <&typec1_usb_ss>;
+		        phandle = <0x2f>;
                     };
                 };
             };
@@ -1135,6 +1144,11 @@
 	    #pwm-cells = <2>;
 	};
 
+
+	wdt@23d2b0000 {
+	    compatible = "apple,wdt";
+	    reg = <0x2 0x3d2b0000 0x00 0x4000>;
+	};
     };
     leds {
         compatible = "pwm-leds";
@@ -1153,5 +1167,6 @@
         gpios = <&smc 18 0>;
 	default-on;
 	status = "okay";
+	phandle = <0x02>;
     };
 };
