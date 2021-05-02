@@ -21,6 +21,9 @@ extern int apple_m1_smc_read_percentage(struct device *dev, u32 key,
 extern int apple_m1_smc_read_ui16(struct device *dev, u32 key,
 				  int *pval);
 
+extern int apple_m1_smc_read_float(struct device *dev, u32 key,
+				   int *pval);
+
 struct apple_battery {
 	struct platform_device *pdev;
 	struct power_supply *psy;
@@ -43,7 +46,7 @@ static int apple_battery_get_property(struct power_supply *psy,
 		return 0;
 	case POWER_SUPPLY_PROP_ENERGY_NOW:
 		key = batt->key_energy_now;
-		apple_m1_smc_read_ui16(&batt->pdev->dev, key,
+		apple_m1_smc_read_float(&batt->pdev->dev, key,
 				       &val->intval);
 		return 0;
 	case POWER_SUPPLY_PROP_ENERGY_FULL:
