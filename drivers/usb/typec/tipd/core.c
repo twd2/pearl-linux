@@ -756,10 +756,21 @@ static int tps6598x_probe(struct i2c_client *client)
 		return -ENODEV;
 	tps->product_id = pid;
 
-	/* Make sure the controller has application firmware running */
-	ret = tps6598x_check_mode(tps);
-	if (ret)
+	if (tps->just_init) {
+		ret = devm_request_threaded_irq(&client->dev, client->irq, NULL,
+						tps6598x_interrupt,
+						IRQF_SHARED | IRQF_ONESHOT,
+						dev_name(&client->dev), tps);
+
 		return ret;
+	}
+
+	/* Make sure the controller has application firmware running */
+	if (!tps->just_init) {
+		ret = tps6598x_check_mode(tps);
+		if (ret)
+			return ret;
+	}
 
 	if(pid == PID_CD3217 || pid == PID_CD3218)
 		tps->cd321x_support = true;
