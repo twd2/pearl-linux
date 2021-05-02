@@ -15,11 +15,18 @@ static const enum power_supply_property properties[] = {
 	POWER_SUPPLY_PROP_ENERGY_FULL,
 };
 
-extern int apple_m1_smc_read_percentage(struct device *dev, int *pval);
+extern int apple_m1_smc_read_percentage(struct device *dev, u32 key,
+					int *pval);
+
+extern int apple_m1_smc_read_ui16(struct device *dev, u32 key,
+				  int *pval);
 
 struct apple_battery {
 	struct platform_device *pdev;
 	struct power_supply *psy;
+	u32 key_capacity;
+	u32 key_energy_now;
+	u32 key_energy_full;
 };
 
 static int apple_battery_get_property(struct power_supply *psy,
@@ -27,13 +34,22 @@ static int apple_battery_get_property(struct power_supply *psy,
 				      union power_supply_propval *val)
 {
 	struct apple_battery *batt = power_supply_get_drvdata(psy);
+	u32 key;
 	switch (psp) {
 	case POWER_SUPPLY_PROP_CAPACITY:
+		key = batt->key_capacity;
+		apple_m1_smc_read_percentage(&batt->pdev->dev, key,
+					     &val->intval);
+		return 0;
 	case POWER_SUPPLY_PROP_ENERGY_NOW:
-		apple_m1_smc_read_percentage(&batt->pdev->dev, &val->intval);
+		key = batt->key_energy_now;
+		apple_m1_smc_read_ui16(&batt->pdev->dev, key,
+				       &val->intval);
 		return 0;
 	case POWER_SUPPLY_PROP_ENERGY_FULL:
-		val->intval = 100;
+		key = batt->key_energy_full;
+		apple_m1_smc_read_ui16(&batt->pdev->dev, key,
+				       &val->intval);
 		return 0;
 	default:
 		return -EINVAL;
@@ -75,6 +91,15 @@ static int apple_battery_probe(struct platform_device *pdev)
 	cfg->drv_data = batt;
 	batt->pdev = pdev;
 	batt->psy = devm_power_supply_register(dev, &desc, cfg);
+
+	of_property_read_u32_index(dev->of_node, "reg", 0,
+				   &batt->key_capacity);
+
+	of_property_read_u32_index(dev->of_node, "reg", 2,
+				   &batt->key_energy_now);
+
+	of_property_read_u32_index(dev->of_node, "reg", 4,
+				   &batt->key_energy_full);
 
 	if (IS_ERR(batt->psy))
 		return PTR_ERR(batt->psy);

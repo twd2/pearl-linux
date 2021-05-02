@@ -37,7 +37,7 @@
 #define ASCII_8 0x38
 #define ASCII_9 0x39
 
-#define SMC(A,B,C,D) <(((ASCII_##A)<<24)|((ASCII_##B)<<16)|((ASCII_##C)<<8)|((ASCII_##D))) 1>
+#define SMC(A,B,C,D) (((ASCII_##A)<<24)|((ASCII_##B)<<16)|((ASCII_##C)<<8)|((ASCII_##D))) 1
 
 #include <dt-bindings/leds/common.h>
 
@@ -773,19 +773,21 @@
 	    #size-cells = <1>;
 
 	    /* percentage battery charge */
-	    smc_SBAS {
+	    smc_battery {
 	    	compatible = "apple,battery";
-	    	reg = SMC(S,B,A,S);
+	    	reg = <SMC(S,B,A,S)
+		       SMC(S,B,A,R)
+		       SMC(B,0,C,F)>;
 	    };
 
 	    /* power button */
 	    smc_MBSW {
-	        reg = SMC(M,S,W,B);
+	        reg = <SMC(M,S,W,B)>;
 	    };
 
 	    /* lid switch */
 	    smc_MSLD {
-	    	reg = SMC(M,S,L,D);
+	    	reg = <SMC(M,S,L,D)>;
 	    };
         };
 

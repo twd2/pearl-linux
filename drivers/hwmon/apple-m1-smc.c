@@ -357,13 +357,45 @@ static int decode_percentage_float(u32 f)
 	return mantissa;
 }
 
-int apple_m1_smc_read_percentage(struct device *dev, int *percentage)
+int apple_m1_smc_read_percentage(struct device *dev, u32 key,
+				 int *percentage)
 {
 	u32 buf;
 	int ret;
-	struct platform_device *pdev = to_platform_device(dev);
-	u32 key;
-	of_property_read_u32(dev->of_node, "reg", &key);
+
+	ret = apple_m1_smc_read_key(apple_m1_smc_instance,
+				    key, &buf, sizeof(buf));
+
+	if (ret < 0)
+		return ret;
+
+	*percentage = decode_percentage_float(buf);
+
+	return 0;
+}
+
+int apple_m1_smc_read_ui16(struct device *dev, u32 key,
+			   int *percentage)
+{
+	u16 buf;
+	int ret;
+
+	ret = apple_m1_smc_read_key(apple_m1_smc_instance,
+				    key, &buf, sizeof(buf));
+
+	if (ret < 0)
+		return ret;
+
+	*percentage = buf;
+
+	return 0;
+}
+
+int apple_m1_smc_read_float(struct device *dev, u32 key,
+			    int *percentage)
+{
+	u32 buf;
+	int ret;
 
 	ret = apple_m1_smc_read_key(apple_m1_smc_instance,
 				    key, &buf, sizeof(buf));
