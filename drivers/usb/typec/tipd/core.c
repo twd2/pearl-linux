@@ -123,6 +123,7 @@ struct tps6598x {
 	struct mutex lock; /* device lock */
 	u8 i2c_protocol:1;
 	u8 i2c_no_long:1;
+	u8 just_init:1;
 	u8 cd321x_support:1;
 	u32 product_id;
 
@@ -512,6 +513,8 @@ static irqreturn_t tps6598x_interrupt(int irq, void *data)
 		goto err_unlock;
 	}
 	trace_tps6598x_irq(event1, event2);
+	if (tps->just_init)
+		goto err_clear_ints;
 
 	ret = tps6598x_read32(tps, TPS_REG_STATUS, &status);
 	if (ret) {
@@ -741,6 +744,9 @@ static int tps6598x_probe(struct i2c_client *client)
 	if (device_property_read_bool(&client->dev, "no-long-writes"))
 		tps->i2c_no_long = true;
 
+	if (device_property_read_bool(&client->dev, "just-init"))
+		tps->just_init = true;
+
 	ret = tps6598x_read32(tps, TPS_REG_VID, &vid);
 	if (ret < 0 || !vid)
 		return -ENODEV;
@@ -762,7 +768,7 @@ static int tps6598x_probe(struct i2c_client *client)
 	if (ret < 0)
 		return ret;
 
-	if(tps->cd321x_support) {
+	if(tps->cd321x_support && !tps->just_init) {
 		ret = tps6598x_write64(tps, TPS_REG_INT_MASK1, 0);
 		if (ret)
 			dev_err(&client->dev, "failed to set default interrupt mask %d\n", 1);
@@ -775,89 +781,90 @@ static int tps6598x_probe(struct i2c_client *client)
 	}
 
 	local_irq_save(flags);
-	if (pstate == TPS_POWER_STATE_BOOT) {
-		/* on Apple M1, this is how the CD3217/8 comes up; transition to S0 */
-		u8 ssps_data[2] = { TPS_POWER_STATE_S0, 0 };
+	if (!tps->just_init) {
+	  if (pstate == TPS_POWER_STATE_BOOT) {
+	    /* on Apple M1, this is how the CD3217/8 comes up; transition to S0 */
+	    u8 ssps_data[2] = { TPS_POWER_STATE_S0, 0 };
 
-		ret = tps6598x_exec_cmd(tps, "SSPS", sizeof(ssps_data), ssps_data, 0, NULL);
-		if (ret) {
-			dev_err(&client->dev, "failed to set power state S0\n");
-			return ret;
-		}
-		dev_err(&client->dev, "port is now in power state S0\n");
+	    ret = tps6598x_exec_cmd(tps, "SSPS", sizeof(ssps_data), ssps_data, 0, NULL);
+	    if (ret) {
+	      dev_err(&client->dev, "failed to set power state S0\n");
+	      return ret;
+	    }
+	    dev_err(&client->dev, "port is now in power state S0\n");
+	  }
+
+	  ret = tps6598x_read32(tps, TPS_REG_STATUS, &status);
+	  if (ret < 0)
+	    return ret;
+	  trace_tps6598x_status(status);
+
+	  ret = tps6598x_read32(tps, TPS_REG_SYSTEM_CONF, &conf);
+	  if (ret < 0)
+	    return ret;
+
+	  fwnode = device_get_named_child_node(&client->dev, "connector");
+	  if (!fwnode)
+	    return -ENODEV;
+
+	  tps->role_sw = fwnode_usb_role_switch_get(fwnode);
+	  if (IS_ERR(tps->role_sw)) {
+	    ret = PTR_ERR(tps->role_sw);
+	    goto err_fwnode_put;
+	  }
+
+	  typec_cap.revision = USB_TYPEC_REV_1_2;
+	  typec_cap.pd_revision = 0x200;
+	  typec_cap.prefer_role = TYPEC_NO_PREFERRED_ROLE;
+	  typec_cap.driver_data = tps;
+	  typec_cap.ops = &tps6598x_ops;
+	  typec_cap.fwnode = fwnode;
+
+	  switch (TPS_SYSCONF_PORTINFO(conf)) {
+	  case TPS_PORTINFO_SINK_ACCESSORY:
+	  case TPS_PORTINFO_SINK:
+	    typec_cap.type = TYPEC_PORT_SNK;
+	    typec_cap.data = TYPEC_PORT_UFP;
+	    break;
+	  case TPS_PORTINFO_DRP_UFP_DRD:
+	  case TPS_PORTINFO_DRP_DFP_DRD:
+	    typec_cap.type = TYPEC_PORT_DRP;
+	    typec_cap.data = TYPEC_PORT_DRD;
+	    break;
+	  case TPS_PORTINFO_DRP_UFP:
+	    typec_cap.type = TYPEC_PORT_DRP;
+	    typec_cap.data = TYPEC_PORT_UFP;
+	    break;
+	  case TPS_PORTINFO_DRP_DFP:
+	    typec_cap.type = TYPEC_PORT_DRP;
+	    typec_cap.data = TYPEC_PORT_DFP;
+	    break;
+	  case TPS_PORTINFO_SOURCE:
+	    typec_cap.type = TYPEC_PORT_SRC;
+	    typec_cap.data = TYPEC_PORT_DFP;
+	    break;
+	  default:
+	    ret = -ENODEV;
+	    goto err_role_put;
+	  }
+
+	  ret = devm_tps6598_psy_register(tps);
+	  if (ret)
+	    return ret;
+
+	  tps->port = typec_register_port(&client->dev, &typec_cap);
+	  if (IS_ERR(tps->port)) {
+	    ret = PTR_ERR(tps->port);
+	    goto err_role_put;
+	  }
+	  fwnode_handle_put(fwnode);
+
+	  if (status & TPS_STATUS_PLUG_PRESENT) {
+	    ret = tps6598x_connect(tps, status);
+	    if (ret)
+	      dev_err(&client->dev, "failed to register partner\n");
+	  }
 	}
-
-	ret = tps6598x_read32(tps, TPS_REG_STATUS, &status);
-	if (ret < 0)
-		return ret;
-	trace_tps6598x_status(status);
-
-	ret = tps6598x_read32(tps, TPS_REG_SYSTEM_CONF, &conf);
-	if (ret < 0)
-		return ret;
-
-	fwnode = device_get_named_child_node(&client->dev, "connector");
-	if (!fwnode)
-		return -ENODEV;
-
-	tps->role_sw = fwnode_usb_role_switch_get(fwnode);
-	if (IS_ERR(tps->role_sw)) {
-		ret = PTR_ERR(tps->role_sw);
-		goto err_fwnode_put;
-	}
-
-	typec_cap.revision = USB_TYPEC_REV_1_2;
-	typec_cap.pd_revision = 0x200;
-	typec_cap.prefer_role = TYPEC_NO_PREFERRED_ROLE;
-	typec_cap.driver_data = tps;
-	typec_cap.ops = &tps6598x_ops;
-	typec_cap.fwnode = fwnode;
-
-	switch (TPS_SYSCONF_PORTINFO(conf)) {
-	case TPS_PORTINFO_SINK_ACCESSORY:
-	case TPS_PORTINFO_SINK:
-		typec_cap.type = TYPEC_PORT_SNK;
-		typec_cap.data = TYPEC_PORT_UFP;
-		break;
-	case TPS_PORTINFO_DRP_UFP_DRD:
-	case TPS_PORTINFO_DRP_DFP_DRD:
-		typec_cap.type = TYPEC_PORT_DRP;
-		typec_cap.data = TYPEC_PORT_DRD;
-		break;
-	case TPS_PORTINFO_DRP_UFP:
-		typec_cap.type = TYPEC_PORT_DRP;
-		typec_cap.data = TYPEC_PORT_UFP;
-		break;
-	case TPS_PORTINFO_DRP_DFP:
-		typec_cap.type = TYPEC_PORT_DRP;
-		typec_cap.data = TYPEC_PORT_DFP;
-		break;
-	case TPS_PORTINFO_SOURCE:
-		typec_cap.type = TYPEC_PORT_SRC;
-		typec_cap.data = TYPEC_PORT_DFP;
-		break;
-	default:
-		ret = -ENODEV;
-		goto err_role_put;
-	}
-
-	ret = devm_tps6598_psy_register(tps);
-	if (ret)
-		return ret;
-
-	tps->port = typec_register_port(&client->dev, &typec_cap);
-	if (IS_ERR(tps->port)) {
-		ret = PTR_ERR(tps->port);
-		goto err_role_put;
-	}
-	fwnode_handle_put(fwnode);
-
-	if (status & TPS_STATUS_PLUG_PRESENT) {
-		ret = tps6598x_connect(tps, status);
-		if (ret)
-			dev_err(&client->dev, "failed to register partner\n");
-	}
-
 	ret = devm_request_threaded_irq(&client->dev, client->irq, NULL,
 					tps6598x_interrupt,
 					IRQF_SHARED | IRQF_ONESHOT,
@@ -870,7 +877,7 @@ static int tps6598x_probe(struct i2c_client *client)
 
 	i2c_set_clientdata(client, tps);
 
-	if(tps->cd321x_support) {
+	if(tps->cd321x_support && !tps->just_init) {
 		ret = tps6598x_write64(tps, TPS_REG_INT_MASK1, TPS_CD321X_INT_MASK);
 		if (ret)
 			dev_err(&client->dev, "failed to set default interrupt mask %d\n", 1);
