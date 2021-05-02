@@ -13,7 +13,7 @@ static const enum power_supply_property properties[] = {
 	POWER_SUPPLY_PROP_CAPACITY,
 };
 
-extern int apple_m1_smc_read_percentage(struct device *dev);
+extern int apple_m1_smc_read_percentage(struct device *dev, int *pval);
 
 struct apple_battery {
 	struct platform_device *pdev;
@@ -27,7 +27,7 @@ static int apple_battery_get_property(struct power_supply *psy,
 	struct apple_battery *batt = power_supply_get_drvdata(psy);
 	switch (psp) {
 	case POWER_SUPPLY_PROP_CAPACITY:
-		val->intval = apple_m1_smc_read_percentage(&batt->pdev->dev);
+		apple_m1_smc_read_percentage(&batt->pdev->dev, &val->intval);
 		return 0;
 	default:
 		return -EINVAL;
