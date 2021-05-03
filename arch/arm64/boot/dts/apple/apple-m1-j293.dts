@@ -891,6 +891,22 @@
 			};
 		};
 
+		spi4: spi@235110000 {
+			compatible = "apple,spi-mc-m1";
+			reg = <0x2 0x35110000 0x0 0x4000>;
+			interrupts = <0 618 4>;
+			clocks = <&spi3_clk>; /* not true, obviously */
+			cs-gpios = <&gpio 24 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			unknown@0 {
+				compatible = "spidev";
+				reg = <0>;
+				spi-max-frequency = <2000000>;
+			};
+		};
+
 		ans_clk: ans_clk@23b7003f0 {
 			compatible = "apple,pmgr-clk-gate";
 			#clock-cells = <0>;
