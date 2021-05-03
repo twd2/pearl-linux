@@ -66,7 +66,7 @@ static int apple_battery_property_is_writable(struct power_supply *psy,
 }
 
 static const struct power_supply_desc desc = {
-	.name = "Apple M1 battery",
+	.name = "smc_battery",
 	.type = POWER_SUPPLY_TYPE_BATTERY,
 	.properties = properties,
 	.num_properties = ARRAY_SIZE(properties),
