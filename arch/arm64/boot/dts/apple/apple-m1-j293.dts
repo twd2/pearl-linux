@@ -209,7 +209,7 @@
 
 	 refclk100mhz: refclk100mhz {
 		compatible = "fixed-clock";
-				#clock-cells = <0>;
+		#clock-cells = <0>;
 		clock-frequency = <100000000>;
 		clock-output-names = "refclk100mhz";
 	};
