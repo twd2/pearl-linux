@@ -94,7 +94,8 @@ static int fpwm_probe(struct platform_device *pdev)
 
 	mutex_init(&fpwm->mutex);
 
-	ret = pwmchip_add(&fpwm->chip);
+	ret = pwmchip_add_with_polarity(&fpwm->chip,
+					PWM_POLARITY_NORMAL);
 	if(ret < 0)
 		return ret;
 
