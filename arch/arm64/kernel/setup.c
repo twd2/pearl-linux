@@ -195,7 +195,7 @@ asmlinkage void __init early_fdt_map(u64 dt_phys)
 #define APPLE_BA_PHYS_BASE  0x10
 #define APPLE_BA_KERNEL_TOM 0x20
 
-static void fixup_fdt(void *fdt, size_t size, u64 bootargs)
+static void fixup_fdt(void *fdt, size_t size, u64 bootargs, u64 base)
 {
 #if 1
 	void *ba_virt = fixmap_remap_bootargs(bootargs, PAGE_KERNEL);
@@ -217,6 +217,12 @@ static void fixup_fdt(void *fdt, size_t size, u64 bootargs)
 			p2[1] = cpu_to_be32(bootargs&0xffffffff);
 			p2[2] = cpu_to_be32(0);
 			p2[3] = cpu_to_be32(0x8000);
+		} else if (strcmp(p, "basegoeshere!!!") == 0) {
+			u32 *p2 = (u32 *)p;
+			p2[0] = cpu_to_be32(base>>32);
+			p2[1] = cpu_to_be32(base&0xffffffff);
+			p2[2] = cpu_to_be32(0);
+			p2[3] = cpu_to_be32(0x8000);
 		} else if (strcmp(p, "adtgoeshere!!!!") == 0) {
 			u32 *p2 = (u32 *)p;
 			p2[0] = cpu_to_be32(adt>>32);
@@ -235,7 +241,7 @@ static void fixup_fdt(void *fdt, size_t size, u64 bootargs)
 static void __init setup_machine_fdt(phys_addr_t dt_phys)
 {
 	if (!dt_phys) {
-		fixup_fdt(fdt, sizeof(fdt), boot_args[1]);
+	        fixup_fdt(fdt, sizeof(fdt), boot_args[1], boot_args[2]);
 		early_init_dt_scan(fdt);
 		return;
 	}
