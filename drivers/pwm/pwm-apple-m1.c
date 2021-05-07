@@ -94,8 +94,7 @@ static int fpwm_probe(struct platform_device *pdev)
 
 	mutex_init(&fpwm->mutex);
 
-	ret = pwmchip_add_with_polarity(&fpwm->chip,
-					PWM_POLARITY_NORMAL);
+	ret = pwmchip_add(&fpwm->chip);
 	if(ret < 0)
 		return ret;
 
@@ -126,8 +125,8 @@ static int fpwm_remove(struct platform_device *pdev)
 
 	int ret = pwmchip_remove(&fpwm->chip);
 
-	if (IS_ERR(ret))
-	  return PTR_ERR(ret);
+	if (ret < 0)
+	  return ret;
 
 	clk_disable_unprepare(fpwm->clk);
 
