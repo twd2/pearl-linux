@@ -1026,7 +1026,7 @@
 			label = "kbd_backlight";
 			function = LED_FUNCTION_KBD_BACKLIGHT;
 			color = <LED_COLOR_ID_WHITE>;
-			pwms = <&fpwm0 0 1000>;
+			pwms = <&fpwm0 0 1000000>;
 			max-brightness = <255>;
 		};
 	};
