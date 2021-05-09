@@ -54,14 +54,7 @@ config ARM_GIC_V3_ITS_FSL_MC
 	depends on FSL_MC_BUS
 	default ARM_GIC_V3_ITS
 
-config APPLE_AIC
-	bool
-	depends on ARCH_APPLE
-	select IRQ_DOMAIN_HIERARCHY
-	select GENERIC_IRQ_MULTI_HANDLER
-	select GENERIC_IRQ_EFFECTIVE_AFF_MASK
-
-config APPLE_AIC_OLD
+config APPLE_FIQ
 	bool
 	depends on ARCH_APPLE
 	select IRQ_DOMAIN_HIERARCHY
@@ -611,8 +604,20 @@ config APPLE_AIC
 	bool "Apple Interrupt Controller (AIC)"
 	depends on ARM64
 	default ARCH_APPLE
+	select IRQ_DOMAIN_HIERARCHY
+	select GENERIC_IRQ_MULTI_HANDLER
+	select GENERIC_IRQ_EFFECTIVE_AFF_MASK
 	help
 	  Support for the Apple Interrupt Controller found on Apple Silicon SoCs,
 	  such as the M1.
 
+config APPLE_FIQ
+	bool "Apple FIQ-only mode (FIQ)"
+	depends on ARM64
+	default ARCH_APPLE
+	select IRQ_DOMAIN_HIERARCHY
+	select GENERIC_IRQ_MULTI_HANDLER
+	select GENERIC_IRQ_EFFECTIVE_AFF_MASK
+	help
+	  M1 FIQ-only mode.
 endmenu
