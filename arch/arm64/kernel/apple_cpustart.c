@@ -15,7 +15,7 @@
 #include <asm/smp_plat.h>
 #include <asm/io.h>
 
-#define MAGIC_UNLOCK 0xc5acce55
+#define MAGIC_UNLOCK 0xc5acce55 /* See ARM CoreSightArchitecture Specification v3.0 ? */
 
 struct cpu_apple_start_info {
     void __iomem *pmgr_start;
