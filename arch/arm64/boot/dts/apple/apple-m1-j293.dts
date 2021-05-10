@@ -776,8 +776,8 @@
 			smc_battery {
 				compatible = "apple,battery";
 				reg = <SMC(S,B,A,S)
-					SMC(S,B,A,R)
-					SMC(B,0,C,F)>;
+				       SMC(S,B,A,R)
+				       SMC(B,0,C,F)>;
 			};
 
 			/* power button */
