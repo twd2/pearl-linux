@@ -120,8 +120,8 @@ static int cpu_apple_start_prepare(unsigned int cpu)
         }
     }
 
-    if(cpu)
-        apple_aic_cpu_prepare(cpu);
+    //if(cpu)
+    //    apple_aic_cpu_prepare(cpu);
 
     return 0;
 }
