@@ -51,6 +51,7 @@
 #include <linux/delay.h>
 #include <linux/io.h>
 #include <linux/irqchip.h>
+#include <linux/irqchip/arm-vgic-info.h>
 #include <linux/irqdomain.h>
 #include <linux/limits.h>
 #include <linux/of_address.h>
@@ -803,6 +804,11 @@ void apple_aic_cpu_prepare(unsigned int cpu)
 			      BIT(cpu)));
 }
 
+static struct gic_kvm_info vgic_info __initdata = {
+	.type			= GIC_V3,
+	.no_hw_deactivation	= true,
+};
+
 static int __init aic_of_ic_init(struct device_node *node, struct device_node *parent)
 {
 	int i;
@@ -862,6 +868,8 @@ static int __init aic_of_ic_init(struct device_node *node, struct device_node *p
 	cpuhp_setup_state(CPUHP_AP_IRQ_APPLE_AIC_STARTING,
 			  "irqchip/apple-aic/ipi:starting",
 			  aic_init_cpu, NULL);
+
+	vgic_set_kvm_info(&vgic_info);
 
 	aic_ic_write(irqc, AIC_CONFIG, (aic_ic_read(irqc, AIC_CONFIG) & ~0xf00000) | 0x700000);
 	pr_info("Initialized with %d IRQs, %d FIQs, %d vIPIs\n",
