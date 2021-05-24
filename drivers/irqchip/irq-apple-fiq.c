@@ -225,12 +225,15 @@ static void aic_fiq_eoi(struct irq_data *d)
 static void __exception_irq_entry aic_handle_irq(struct pt_regs *regs)
 {
 #define AIC_EVENT		0x2004
-  printk("! %08x", readl(aic_irqc->base + AIC_EVENT));
+  u32 event = readl(aic_irqc->base + AIC_EVENT);
+  printk("! %08x", event);
   int i;
   for (i = 0; i < 896; i++)
 #define AIC_TARGET_CPU		0x3000
     writel(readl(aic_irqc->base + AIC_TARGET_CPU + i * 4) &~ 0x80,
 	   aic_irqc->base + AIC_TARGET_CPU + i * 4);
+  writel(BIT(event&0x1f),
+	 aic_irqc->base + 0x4180 + 4 * ((event & 0xffff)/32));
 }
 static void __exception_irq_entry aic_handle_fiq(struct pt_regs *regs)
 {
