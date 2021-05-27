@@ -72,7 +72,7 @@ config SPI_APPLE_MC
 	  including the M1.
 
 config SPI_ALTERA_CORE
-	tristate "Altera SPI Controller core code"
+	tristate "Altera SPI Controller core code" if COMPILE_TEST
 	select REGMAP
 	help
 	  "The core code for the Altera SPI Controller"
