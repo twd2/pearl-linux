@@ -52,9 +52,9 @@
 #include <asm/xen/hypervisor.h>
 #include <asm/mmu_context.h>
 
-#if 1
+#ifdef CONFIG_BUILTIN_DEVICE_TREE
 uint32_t fdt[] __attribute__((aligned(32))) =
-#include <../../../m1lli/asm-snippets/maximal-dt.dts.dtb.h>
+#include CONFIG_DEVICE_TREE_SOURCE
   ;
 #endif
 static int num_standard_resources;
