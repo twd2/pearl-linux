@@ -1309,6 +1309,13 @@ source "usr/Kconfig"
 
 endif
 
+config BUILTIN_DEVICE_TREE
+        bool "Built-in device tree"
+	help
+	  Override the device tree with a built-in file.
+
+          If unsure, say N.
+
 config DEVICE_TREE_SOURCE
 	string "DT source file(s)"
 	default ""
