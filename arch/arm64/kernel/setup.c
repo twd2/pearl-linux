@@ -202,6 +202,7 @@ asmlinkage void __init early_fdt_map(u64 dt_phys)
 #define APPLE_BA_FB_WIDTH     0x40
 #define APPLE_BA_FB_HEIGHT    0x48
 #define APPLE_BA_FB_DEPTH     0x50
+#define APPLE_BA_MEM_SIZE_ACTUAL 0x2d8
 
 static void fill_in_framebuffer(char *fdt, void *ba_virt)
 {
@@ -244,6 +245,8 @@ static void fixup_fdt(void *fdt, size_t size, u64 bootargs, u64 base)
 	u64 adtsize = (*(uint32_t *)(ba_virt + APPLE_BA_DTREE_SIZE));
 	u64 ksize = (*(uint64_t *)(ba_virt + APPLE_BA_KERNEL_TOM));
 	u64 memsize = (*(uint64_t *)(ba_virt + APPLE_BA_MEM_SIZE));
+	u64 memsize_actual = (*(uint64_t *)(ba_virt + APPLE_BA_MEM_SIZE_ACTUAL));
+	u64 phys_base = *(uint64_t *)(ba_virt + APPLE_BA_PHYS_BASE);
 
 	char *p;
 	for (p = fdt; (void *)p < fdt + size; p++)
@@ -275,16 +278,16 @@ static void fixup_fdt(void *fdt, size_t size, u64 bootargs, u64 base)
 			p2[3] = cpu_to_be32(ksize&0xffffffff);
 		} else if (strcmp(p, "endofmemory!!!!") == 0) {
 			u32 *p2 = (u32 *)p;
-			p2[0] = cpu_to_be32(memsize >> 32);
-			p2[1] = cpu_to_be32(memsize & 0xffffffff);
-			p2[2] = cpu_to_be32((0xc00000000 - memsize) >> 32);
-			p2[3] = cpu_to_be32((0xc00000000 - memsize) & 0xffffffff);
+			p2[0] = cpu_to_be32((memsize + (phys_base - 0x800000000))>> 32);
+			p2[1] = cpu_to_be32((memsize + (phys_base - 0x800000000))& 0xffffffff);
+			p2[2] = cpu_to_be32((memsize_actual - memsize) >> 32);
+			p2[3] = cpu_to_be32((memsize_actual - memsize) & 0xffffffff);
 		} else if (strcmp(p, "memorygoeshere!") == 0) {
 			u32 *p2 = (u32 *)p;
 			p2[0] = cpu_to_be32(0x8);
 			p2[1] = cpu_to_be32(0);
-			p2[2] = cpu_to_be32(memsize >> 32);
-			p2[3] = cpu_to_be32(memsize & 0xffffffff);
+			p2[2] = cpu_to_be32(memsize_actual >> 32);
+			p2[3] = cpu_to_be32(memsize_actual & 0xffffffff);
 		}
 }
 
