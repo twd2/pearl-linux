@@ -191,17 +191,17 @@ asmlinkage void __init early_fdt_map(u64 dt_phys)
 	early_fdt_ptr = fixmap_remap_fdt(dt_phys, &fdt_size, PAGE_KERNEL);
 }
 
-#define APPLE_BA_DTREE_VIRT 0x60
-#define APPLE_BA_DTREE_SIZE 0x68
-#define APPLE_BA_VIRT_BASE  0x08
-#define APPLE_BA_PHYS_BASE  0x10
-#define APPLE_BA_MEM_SIZE     0x18
-#define APPLE_BA_KERNEL_TOM 0x20
-#define APPLE_BA_FB_PHYS_BASE 0x28
-#define APPLE_BA_FB_STRIDE    0x38
-#define APPLE_BA_FB_WIDTH     0x40
-#define APPLE_BA_FB_HEIGHT    0x48
-#define APPLE_BA_FB_DEPTH     0x50
+#define APPLE_BA_VIRT_BASE        0x08
+#define APPLE_BA_PHYS_BASE        0x10
+#define APPLE_BA_MEM_SIZE         0x18
+#define APPLE_BA_KERNEL_TOM       0x20
+#define APPLE_BA_FB_PHYS_BASE     0x28
+#define APPLE_BA_FB_STRIDE        0x38
+#define APPLE_BA_FB_WIDTH         0x40
+#define APPLE_BA_FB_HEIGHT        0x48
+#define APPLE_BA_FB_DEPTH         0x50
+#define APPLE_BA_DTREE_VIRT       0x60
+#define APPLE_BA_DTREE_SIZE       0x68
 #define APPLE_BA_MEM_SIZE_ACTUAL 0x2d8
 
 static void fill_in_framebuffer(char *fdt, void *ba_virt)
