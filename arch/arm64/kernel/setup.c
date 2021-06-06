@@ -273,13 +273,13 @@ static void fixup_fdt(void *fdt, size_t size, u64 bootargs, u64 base)
 			p2[1] = cpu_to_be32(0);
 			p2[2] = cpu_to_be32((ksize >> 32) - 8);
 			p2[3] = cpu_to_be32(ksize&0xffffffff);
-		} else if (strcmp(p, "endofmemory!!!!")) {
+		} else if (strcmp(p, "endofmemory!!!!") == 0) {
 			u32 *p2 = (u32 *)p;
 			p2[0] = cpu_to_be32(memsize >> 32);
 			p2[1] = cpu_to_be32(memsize & 0xffffffff);
 			p2[2] = cpu_to_be32((0xc00000000 - memsize) >> 32);
 			p2[3] = cpu_to_be32((0xc00000000 - memsize) & 0xffffffff);
-		} else if (strcmp(p, "memorygoeshere!")) {
+		} else if (strcmp(p, "memorygoeshere!") == 0) {
 			u32 *p2 = (u32 *)p;
 			p2[0] = cpu_to_be32(0x8);
 			p2[1] = cpu_to_be32(0);
