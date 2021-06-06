@@ -410,7 +410,7 @@ static int apple_m1_ans_probe(struct platform_device *pdev)
 	ans->mbox.dev = ans->dev;
 	ans->mbox.rx_callback = apple_m1_ans_mbox_msg;
 	ans->mbox.tx_block = true;
-	ans->mbox.tx_tout = 500;
+	ans->mbox.tx_tout = 5000;
 	ans->chan = mbox_request_channel(&ans->mbox, 0);
 	if(IS_ERR(ans->chan)) {
 		err = PTR_ERR(ans->chan);
