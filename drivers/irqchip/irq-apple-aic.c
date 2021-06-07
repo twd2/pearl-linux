@@ -236,6 +236,7 @@ static void __exception_irq_entry aic_handle_irq(struct pt_regs *regs)
 	struct aic_irq_chip *ic = aic_irqc;
 	u32 event, type, irq;
 	unsigned long flags;
+	static long count;
 	local_irq_save(flags);
 
 	do {
@@ -244,6 +245,10 @@ static void __exception_irq_entry aic_handle_irq(struct pt_regs *regs)
 		 * need to be ordered after the IRQ fires.
 		 */
 		event = readl(ic->base + AIC_EVENT);
+		if ((count & (count-1)) == 0) {
+			printk("IRQ event %08x\n", event);
+		}
+		count++;
 		type = FIELD_GET(AIC_EVENT_TYPE, event);
 		irq = FIELD_GET(AIC_EVENT_NUM, event);
 
