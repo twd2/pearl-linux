@@ -1047,12 +1047,14 @@ static irqreturn_t brcmf_pcie_quick_check_isr(int irq, void *arg)
 	return IRQ_NONE;
 }
 
+volatile int ignore_irqs = 1;
 
 static irqreturn_t brcmf_pcie_isr_thread(int irq, void *arg)
 {
 	struct brcmf_pciedev_info *devinfo = (struct brcmf_pciedev_info *)arg;
 	u32 status, mask;
 
+	while (ignore_irqs);
 	if(devinfo->ci->chip == BRCM_CC_4378_CHIP_ID)
 		mask = BRCMF_PCIE_64_MB_INT_D2H_DB;
 	else
