@@ -1319,9 +1319,7 @@ int brcmf_alloc(struct device *dev, struct brcmf_mp_device *settings)
 	return 0;
 }
 
-extern volatile int ignore_irqs;
-
-int brcmf_attach(struct device *dev)
+int brcmf_attach_preirq(struct device *dev)
 {
 	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
 	struct brcmf_pub *drvr = bus_if->drvr;
@@ -1345,7 +1343,19 @@ int brcmf_attach(struct device *dev)
 		goto fail;
 	}
 
-	ignore_irqs = 0;
+	return 0;
+
+ fail:
+	brcmf_detach(dev);
+
+	return ret;
+}
+
+int brcmf_attach_postirq(struct device *dev)
+{
+	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
+	struct brcmf_pub *drvr = bus_if->drvr;
+	int ret = 0;
 
 	/* Attach to events important for core code */
 	brcmf_fweh_register(drvr, BRCMF_E_PSM_WATCHDOG,
@@ -1362,7 +1372,7 @@ int brcmf_attach(struct device *dev)
 
 	return 0;
 
-fail:
+ fail:
 	brcmf_detach(dev);
 
 	return ret;

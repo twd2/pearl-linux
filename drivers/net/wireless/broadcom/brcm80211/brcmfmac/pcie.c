@@ -1047,14 +1047,11 @@ static irqreturn_t brcmf_pcie_quick_check_isr(int irq, void *arg)
 	return IRQ_NONE;
 }
 
-volatile int ignore_irqs = 1;
-
 static irqreturn_t brcmf_pcie_isr_thread(int irq, void *arg)
 {
 	struct brcmf_pciedev_info *devinfo = (struct brcmf_pciedev_info *)arg;
 	u32 status, mask;
 
-	while (ignore_irqs);
 	if(devinfo->ci->chip == BRCM_CC_4378_CHIP_ID)
 		mask = BRCMF_PCIE_64_MB_INT_D2H_DB;
 	else
@@ -2037,9 +2034,6 @@ static void brcmf_pcie_setup(struct device *dev, int ret,
 		goto fail;
 
 	brcmf_pcie_select_core(devinfo, BCMA_CORE_PCIE2);
-	ret = brcmf_pcie_request_irq(devinfo);
-	if (ret)
-		goto fail;
 
 	/* hook the commonrings in the bus structure. */
 	for (i = 0; i < BRCMF_NROF_COMMON_MSGRINGS; i++)
@@ -2061,10 +2055,17 @@ static void brcmf_pcie_setup(struct device *dev, int ret,
 
 	init_waitqueue_head(&devinfo->mbdata_resp_wait);
 
+	ret = brcmf_attach_preirq(&devinfo->pdev->dev);
+	if (ret)
+		goto fail;
+
+	ret = brcmf_pcie_request_irq(devinfo);
+	if (ret)
+		goto fail;
 	brcmf_pcie_intr_enable(devinfo);
 	brcmf_pcie_hostready(devinfo);
 
-	ret = brcmf_attach(&devinfo->pdev->dev);
+	ret = brcmf_attach_postirq(&devinfo->pdev->dev);
 	if (ret)
 		goto fail;
 
