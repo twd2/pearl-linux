@@ -358,6 +358,10 @@ static int apple_m1_ans_probe(struct platform_device *pdev)
 	void __iomem *base;
 	u32 bus_base;
 	int err, i, j;
+	static int waitcount = 5;
+
+	if (waitcount--)
+		return -EBUSY;
 
 	bridge = devm_pci_alloc_host_bridge(&pdev->dev, sizeof(*ans));
 	if(!bridge)
