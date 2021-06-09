@@ -632,7 +632,7 @@ static int apple_m1_smc_probe(struct platform_device *pdev)
 	}
 
 	for (i = 0; i < MAX_GPIO; i++)
-	  smc->gpio_bits[i] = 0;
+		smc->gpio_bits[i] = 0;
 	smc->gpio_present_mask = 0xffffffff;
 
 	smc->mbox.dev = dev;
