@@ -359,6 +359,8 @@ static int apple_m1_ans_probe(struct platform_device *pdev)
 	u32 bus_base;
 	int err, i, j;
 
+	mdelay(10000);
+
 	bridge = devm_pci_alloc_host_bridge(&pdev->dev, sizeof(*ans));
 	if(!bridge)
 		return -ENOMEM;
