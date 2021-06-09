@@ -134,8 +134,8 @@ static void apple_gpio_init_reg(struct apple_gpio_pinctrl *pctl, unsigned pin)
 	} else {
 		pincfg->irqtype = reg & REG_GPIOx_IRQ_MASK;
 		pincfg->stat = 0;
-		apple_gpio_refresh_reg(pctl, pin);
 	}
+	apple_gpio_refresh_reg(pctl, pin);
 }
 
 /* Pin controller functions */
@@ -374,6 +374,8 @@ static void apple_gpio_gpio_irq_handler(struct irq_desc *desc)
 			if ((count & (count - 1)) == 0)
 				printk("pending: %d/%08lx", pinh, pending);
 			count++;
+			for_each_set_bit(pinl, &pending, 32)
+				apple_gpio_refresh_reg(pctl, pinh + pinl);
 		}
 		for_each_set_bit(pinl, &pending, 32)
 			generic_handle_irq(irq_linear_revmap(gc->irq.domain, pinh + pinl));
