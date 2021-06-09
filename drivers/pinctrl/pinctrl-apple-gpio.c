@@ -371,14 +371,24 @@ static void apple_gpio_gpio_irq_handler(struct irq_desc *desc)
 	for(pinh=0; pinh<pctl->npins; pinh+=32) {
 		pending = readl(pctl->base + REG_IRQ(irqgrp, pinh));
 		if (pending) {
-			if ((count & (count - 1)) == 0)
+			if ((count & (count - 1)) == 0) {
 				printk("pending: %d/%08lx", pinh, pending);
+				for_each_set_bit(pinl, &pending, 32) {
+					struct apple_gpio_pincfg *pincfg = &pctl->pin_cfgs[pinh + pinl];
+					printk("pin %d stat is %08x\n", pinh + pinl,
+					       pincfg->stat);
+
+					apple_gpio_refresh_reg(pctl, pinh + pinl);
+					unsigned irqgrp = (apple_gpio_get_reg(pctl, pinh + pinl) & REG_GPIOx_GRP_MASK) >> REG_GPIOx_GRP_SHIFT;
+
+					writel(1u << (pinl), pctl->base + REG_IRQ(irqgrp, pinh + pinl));
+				}
+			}
 			count++;
-			for_each_set_bit(pinl, &pending, 32)
-				apple_gpio_refresh_reg(pctl, pinh + pinl);
 		}
-		for_each_set_bit(pinl, &pending, 32)
+		for_each_set_bit(pinl, &pending, 32) {
 			generic_handle_irq(irq_linear_revmap(gc->irq.domain, pinh + pinl));
+		}
 	}
 	chained_irq_exit(chip, desc);
 }
