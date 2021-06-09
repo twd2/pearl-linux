@@ -23,7 +23,7 @@ config PCI_AARDVARK
 	 3700 SoC.
 
 config PCIE_APPLE_M1
-	bool "Apple M1 PCIe controller"
+	tristate "Apple M1 PCIe controller"
 	depends on ARCH_APPLE
 	depends on OF
 	depends on PCI_MSI_IRQ_DOMAIN

@@ -250,7 +250,7 @@ config SPAPR_TCE_IOMMU
 	  is not implemented as it is not necessary for VFIO.
 
 config APPLE_DART_IOMMU
-	bool "Apple ARM SoC DART IOMMU"
+	tristate "Apple ARM SoC DART IOMMU"
 	depends on ARCH_APPLE
 	select ARM_DMA_USE_IOMMU
 	select IOMMU_API
