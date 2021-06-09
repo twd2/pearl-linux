@@ -599,6 +599,7 @@ int apple_iop_set_mapper_func(void *iop_mbox_chan, apple_iop_mapper_func_t func,
 	spin_unlock_irqrestore(&am->lock, flags);
 	return 0;
 }
+EXPORT_SYMBOL_GPL(apple_iop_set_mapper_func);
 
 /* A2I -> AP to IOP, I2A -> IOP to AP */
 #define A7V4_CPU_CTRL		0x0044
