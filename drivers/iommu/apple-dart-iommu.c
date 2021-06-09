@@ -863,6 +863,7 @@ static const struct iommu_ops apple_dart_iommu_ops = {
 	.release_device = apple_dart_iommu_release_device,
 	.device_group = apple_dart_iommu_device_group,
 	.pgsize_bitmap = ~0x3FFFul,
+	.owner = THIS_MODULE,
 };
 
 static const struct apple_dart_version apple_dart_version_a10 = {
