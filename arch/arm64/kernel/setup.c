@@ -245,8 +245,9 @@ static void fixup_fdt(void *fdt, size_t size, u64 bootargs, u64 base)
 	u64 adtsize = (*(uint32_t *)(ba_virt + APPLE_BA_DTREE_SIZE));
 	u64 ksize = (*(uint64_t *)(ba_virt + APPLE_BA_KERNEL_TOM));
 	u64 memsize = (*(uint64_t *)(ba_virt + APPLE_BA_MEM_SIZE));
-	u64 memsize_actual = (*(uint64_t *)(ba_virt + APPLE_BA_MEM_SIZE_ACTUAL));
 	u64 phys_base = *(uint64_t *)(ba_virt + APPLE_BA_PHYS_BASE);
+	int i;
+	u64 memsize_actual = 0x400000000;
 
 	char *p;
 	for (p = fdt; (void *)p < fdt + size; p++)
@@ -255,7 +256,7 @@ static void fixup_fdt(void *fdt, size_t size, u64 bootargs, u64 base)
 			p2[0] = cpu_to_be32(bootargs>>32);
 			p2[1] = cpu_to_be32(bootargs&0xffffffff);
 			p2[2] = cpu_to_be32(0);
-			p2[3] = cpu_to_be32(0x8000);
+			p2[3] = cpu_to_be32(0x4000);
 		} else if (strcmp(p, "framebuffer!!!!") == 0) {
 			fill_in_framebuffer(p, ba_virt);
 		} else if (strcmp(p, "basegoeshere!!!") == 0) {
@@ -263,7 +264,7 @@ static void fixup_fdt(void *fdt, size_t size, u64 bootargs, u64 base)
 			p2[0] = cpu_to_be32(base>>32);
 			p2[1] = cpu_to_be32(base&0xffffffff);
 			p2[2] = cpu_to_be32(0);
-			p2[3] = cpu_to_be32(0x8000);
+			p2[3] = cpu_to_be32(0x4000);
 		} else if (strcmp(p, "adtgoeshere!!!!") == 0) {
 			u32 *p2 = (u32 *)p;
 			p2[0] = cpu_to_be32(adt>>32);
