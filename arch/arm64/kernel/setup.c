@@ -52,13 +52,10 @@
 #include <asm/xen/hypervisor.h>
 #include <asm/mmu_context.h>
 
-uint32_t fdt[] __attribute__((aligned(32))) =
-#ifdef CONFIG_BUILTIN_DEVICE_TREE
-#include CONFIG_DEVICE_TREE_SOURCE
-#else
-  {}
+#ifdef CONFIG_BUILTIN_DEVICE_TREE_TEMPLATE
+#include CONFIG_DEVICE_TREE_TEMPLATE
 #endif
-  ;
+
 static int num_standard_resources;
 static struct resource *standard_resources;
 
