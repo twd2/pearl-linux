@@ -258,7 +258,7 @@ struct apple_bootargs {
 static void __init fixup_fdt(u64 bootargs_phys, u64 base) __attribute__((__noinline__));
 static void __init fixup_fdt(u64 bootargs_phys, u64 base)
 {
-	void *ba_virt = fixmap_remap_bootargs(bootargs, PAGE_KERNEL);
+	void *ba_virt = fixmap_remap_bootargs(bootargs_phys, PAGE_KERNEL);
 	u64 adt = ((*(uint64_t *)(ba_virt + APPLE_BA_DTREE_VIRT)) -
 		   (*(uint64_t *)(ba_virt + APPLE_BA_VIRT_BASE)) +
 		   (*(uint64_t *)(ba_virt + APPLE_BA_PHYS_BASE)));
@@ -270,11 +270,11 @@ static void __init fixup_fdt(u64 bootargs_phys, u64 base)
 	u64 memsize_actual = 0x400000000;
 
 	char *p;
-	for (p = fdt; (void *)p < fdt + size; p++)
+	for (p = (void*)fdt; (void *)p < (void *)fdt + sizeof(fdt); p++)
 		if (strcmp(p, "bootargsgohere!") == 0) {
 			u32 *p2 = (u32 *)p;
-			p2[0] = cpu_to_be32(bootargs>>32);
-			p2[1] = cpu_to_be32(bootargs&0xffffffff);
+			p2[0] = cpu_to_be32(bootargs_phys>>32);
+			p2[1] = cpu_to_be32(bootargs_phys&0xffffffff);
 			p2[2] = cpu_to_be32(0);
 			p2[3] = cpu_to_be32(0x4000);
 		} else if (strcmp(p, "framebuffer!!!!") == 0) {
