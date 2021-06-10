@@ -235,6 +235,27 @@ static void fill_in_framebuffer(char *fdt, void *ba_virt)
 		}
 	}
 }
+struct apple_bootargs {
+	u64 header;
+	u64 virt_base;
+	u64 phys_base;
+	u64 mem_size;
+	u64 start_of_usable_memory;
+	struct {
+		u64 phys_base;
+		u64 unknown;
+		u64 stride;
+		u64 width;
+		u64 height;
+		u64 depth;
+	} framebuffer;
+	u64 machine_type;
+	u64 adt_virt_base;
+	u32 adt_size;
+	char cmdline[608];
+	u64 bootflags;
+	u64 mem_size_actual;
+};
 
 static void fixup_fdt(void *fdt, size_t size, u64 bootargs, u64 base)
 {
