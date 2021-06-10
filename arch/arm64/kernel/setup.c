@@ -54,6 +54,8 @@
 
 #ifdef CONFIG_BUILTIN_DEVICE_TREE_TEMPLATE
 #include CONFIG_DEVICE_TREE_TEMPLATE
+#else
+static uint32_t fdt[] = {};
 #endif
 
 static int num_standard_resources;
