@@ -262,7 +262,6 @@ static int apple_m1_ans_prepare(struct apple_m1_ans *ans)
 	ret = mbox_send_message(ans->chan, msg);
 	if(ret < 0) {
 		dev_err(ans->dev, "ANS mailbox startup failed: %d.\n", ret);
-		return ret;
 	}
 
 	ret = readl_poll_timeout(ans->nvme + APPLE_BOOT_STATUS, val, (val == APPLE_BOOT_STATUS_OK), 100, 500000);
