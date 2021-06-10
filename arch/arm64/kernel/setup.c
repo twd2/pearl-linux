@@ -54,8 +54,6 @@
 
 #ifdef CONFIG_BUILTIN_DEVICE_TREE_TEMPLATE
 #include CONFIG_DEVICE_TREE_TEMPLATE
-#else
-static uint32_t fdt[] = {};
 #endif
 
 static int num_standard_resources;
@@ -256,7 +254,9 @@ struct apple_bootargs {
 	u64 mem_size_actual;
 };
 
-static void fixup_fdt(void *fdt, size_t size, u64 bootargs, u64 base)
+#ifdef CONFIG_BUILTIN_DEVICE_TREE_TEMPLATE
+static void __init fixup_fdt(u64 bootargs_phys, u64 base) __attribute__((__noinline__));
+static void __init fixup_fdt(u64 bootargs_phys, u64 base)
 {
 	void *ba_virt = fixmap_remap_bootargs(bootargs, PAGE_KERNEL);
 	u64 adt = ((*(uint64_t *)(ba_virt + APPLE_BA_DTREE_VIRT)) -
@@ -310,19 +310,29 @@ static void fixup_fdt(void *fdt, size_t size, u64 bootargs, u64 base)
 			p2[2] = cpu_to_be32(memsize_actual >> 32);
 			p2[3] = cpu_to_be32(memsize_actual & 0xffffffff);
 		}
+	struct apple_bootargs *bootargs =
+		fixmap_remap_bootargs(bootargs_phys, PAGE_KERNEL);
+
+	FDT_INIT();
 }
+#else
+#define fixup_fdt(bootargs_phys, base) while (1)
+#define fdt NULL
+#endif
 
 static void __init setup_machine_fdt(phys_addr_t dt_phys)
 {
+	int size;
+	void *dt_virt = NULL;
+	const char *name;
+
 	if (!dt_phys) {
-	        fixup_fdt(fdt, sizeof(fdt), boot_args[1], boot_args[2]);
+	        fixup_fdt(boot_args[1], boot_args[2]);
 		early_init_dt_scan(fdt);
 		return;
 	}
-	int size;
-	void *dt_virt = fixmap_remap_fdt(dt_phys, &size, PAGE_KERNEL);
-	const char *name;
 
+	dt_virt = fixmap_remap_fdt(dt_phys, &size, PAGE_KERNEL);
 	if (dt_virt)
 		memblock_reserve(dt_phys, size);
 
