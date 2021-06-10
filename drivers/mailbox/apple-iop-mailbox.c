@@ -100,6 +100,7 @@ struct apple_iop_mailbox_data {
 	struct list_head a2i_list_system;
 	/* channel currently in A2I buffer */
 	unsigned a2i_cur_chan;
+	struct timer_list poll_timer;
 	/* EP0 discovery state */
 	enum apple_iop_mailbox_ep0_state ep0_state;
 	u64 ep0_sub;
@@ -331,7 +332,6 @@ static irqreturn_t apple_iop_mailbox_i2a_full_isr(int irq, void *dev_id)
 
 	stat = am->hwops->i2a_stat(am);
 	if(am->hwops->i2a_empty(stat)) {
-		dev_err(am->dev, "full_isr called but i2a_stat is 0x%x - empty.\n", stat);
 		spin_unlock_irqrestore(&am->lock, flags);
 		return IRQ_HANDLED;
 	}
@@ -764,6 +764,15 @@ static const struct of_device_id apple_iop_mailbox_of_match[] = {
 	{ }
 };
 
+static void poll_timer_fn(struct timer_list *t)
+{
+	struct apple_iop_mailbox_data *am = from_timer(am, t, poll_timer);
+	if (!am->a2i_empty_masked)
+		apple_iop_mailbox_a2i_empty_isr(0, am);
+	apple_iop_mailbox_i2a_full_isr(0, am);
+	mod_timer(&am->poll_timer, jiffies + 10);
+}
+
 static int apple_iop_mailbox_probe(struct platform_device *pdev)
 {
 	struct apple_iop_mailbox_data *am;
@@ -931,6 +940,11 @@ static int apple_iop_mailbox_probe(struct platform_device *pdev)
 		am->hwops->try_boot(am);
 	spin_unlock_irqrestore(&am->lock, flags);
 
+	if (am->hwops == &apple_iop_mailbox_a7v4_hwops) {
+		dev_info(&pdev->dev, "registering timer for %016llx", am);
+		timer_setup(&am->poll_timer, poll_timer_fn, 0);
+		mod_timer(&am->poll_timer, jiffies + 10);
+	}
 	return 0;
 }
 
