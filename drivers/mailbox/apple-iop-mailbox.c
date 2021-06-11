@@ -293,6 +293,8 @@ static irqreturn_t apple_iop_mailbox_a2i_empty_isr(int irq, void *dev_id)
 			break;
 		} else
 			break;
+		if (!irq)
+			break;
 		stat = am->hwops->a2i_stat(am);
 	}
 
