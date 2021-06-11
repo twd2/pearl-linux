@@ -822,6 +822,7 @@ static int apple_iop_mailbox_probe(struct platform_device *pdev)
 
 	am->wait_init = of_property_read_bool(np, "wait-init");
 	am->trace = of_property_read_bool(np, "debug-trace");
+	am->trace = 1;
 
 	err = of_property_count_elems_of_size(np, "endpoints", sizeof(u32));
 	if(err <= 0) {
