@@ -948,6 +948,17 @@ static int apple_iop_mailbox_probe(struct platform_device *pdev)
 	return 0;
 }
 
+static int apple_iop_mailbox_remove(struct platform_device *pdev)
+{
+	struct apple_iop_mailbox_data *am = platform_get_drvdata(pdev);
+
+	if (am) {
+		del_timer(&am->poll_timer);
+	}
+
+	return 0;
+}
+
 MODULE_DEVICE_TABLE(of, apple_iop_mailbox_of_match);
 
 static struct platform_driver apple_iop_mailbox_platform_driver = {
@@ -956,6 +967,7 @@ static struct platform_driver apple_iop_mailbox_platform_driver = {
 		.of_match_table = apple_iop_mailbox_of_match,
 	},
 	.probe = apple_iop_mailbox_probe,
+	.remove = apple_iop_mailbox_remove,
 };
 module_platform_driver(apple_iop_mailbox_platform_driver);
 
