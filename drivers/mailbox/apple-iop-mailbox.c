@@ -652,7 +652,8 @@ static void apple_iop_mailbox_a7v4_try_boot(struct apple_iop_mailbox_data *am)
 		ctrl = readl(am->base + A7V4_CPU_CTRL);
 		if(ctrl & A7V4_CPU_CTRL_RUN) {
 			dev_info(am->dev, "waking coprocessor.\n");
-			writeq(0x0060000000000220, am->base + A7V4_A2I_MSG0);
+			writeq(0x0020000100000000 | 0xb000b,
+			       am->base + A7V4_A2I_MSG0);
 			writeq(0, am->base + A7V4_A2I_MSG1);
 			apple_iop_mailbox_unmask_a2i_empty(am);
 		} else {
