@@ -173,44 +173,31 @@ static void apple_iop_mailbox_ep0_push_i2a(struct apple_iop_mailbox_data *am, u6
 	unsigned msgtype = (msg[0] >> 52) & 15;
 	unsigned idx, ep;
 
-	switch(am->ep0_state) {
-	case EP0_IDLE:
-	case EP0_DONE:
-		if(msgtype == 11)
-			return;
-		/* fallthru */
-	case EP0_WAIT_HELLO:
-		if(msgtype == 1) {
-			am->ep0_sub = msg[0] & 0xFFFFFFFFul;
-			am->ep0_state = EP0_SEND_HELLO;
-			return;
-		}
-		break;
-	case EP0_WAIT_EPMAP:
-		if(msgtype == 8) {
-			for(idx=0; idx<32; idx++)
-				if(msg[0] & (1ul << idx)) {
-					ep = idx + 32 * ((msg[0] >> 32) & 7);
-					if(ep < am->num_rev_ep) {
-						ep = am->rev_ep[ep];
-						if(ep != EP_INVALID)
-							am->ep[ep].discovered = true;
-					}
+	if(msgtype == 11)
+		return;
+	if(msgtype == 1) {
+		am->ep0_sub = msg[0] & 0xFFFFFFFFul;
+		am->ep0_state = EP0_SEND_HELLO;
+		return;
+	}
+	if(msgtype == 8) {
+		for(idx=0; idx<32; idx++)
+			if(msg[0] & (1ul << idx)) {
+				ep = idx + 32 * ((msg[0] >> 32) & 7);
+				if(ep < am->num_rev_ep) {
+					ep = am->rev_ep[ep];
+					if(ep != EP_INVALID)
+						am->ep[ep].discovered = true;
 				}
-			am->ep0_sub = (msg[0] >> 32) & 0x80007; /* last msg bit + ep block index */
-			am->ep0_state = EP0_SEND_EPACK;
-			return;
-		}
-		break;
-	case EP0_WAIT_PWROK:
-		if(msgtype == 7) {
-			am->ep0_state = EP0_SEND_PWRACK;
-			am->ep0_sub = msg[0] & 0xFFFFFFFFul;
-			return;
-		}
-		break;
-	default:
-		;
+			}
+		am->ep0_sub = (msg[0] >> 32) & 0x80007; /* last msg bit + ep block index */
+		am->ep0_state = EP0_SEND_EPACK;
+		return;
+	}
+	if(msgtype == 7) {
+		am->ep0_state = EP0_SEND_PWRACK;
+		am->ep0_sub = msg[0] & 0xFFFFFFFFul;
+		return;
 	}
 
 	dev_warn(am->dev, "received unexpected message %016llx:%llx in state %d\n",
