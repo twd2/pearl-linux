@@ -103,6 +103,7 @@ struct apple_iop_mailbox_data {
 	struct timer_list poll_timer;
 	/* EP0 discovery state */
 	enum apple_iop_mailbox_ep0_state ep0_state;
+	int seen_hello;
 	u64 ep0_sub;
 	/* builtin EP state */
 	struct apple_iop_mailbox_builtin_ep {
@@ -134,6 +135,7 @@ static int apple_iop_mailbox_ep0_next_a2i(struct apple_iop_mailbox_data *am, u64
 	default:
 		return 0;
 	case EP0_SEND_HELLO:
+		am->seen_hello = 1;
 		msg[0] = 0x0020000100000000 | am->ep0_sub;
 		msg[1] = 0;
 		am->ep0_state = EP0_WAIT_EPMAP;
