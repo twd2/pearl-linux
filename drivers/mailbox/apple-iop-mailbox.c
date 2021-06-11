@@ -156,8 +156,14 @@ static int apple_iop_mailbox_ep0_next_a2i(struct apple_iop_mailbox_data *am, u64
 		msg[0] = 0x0050000000000002 | ((u64)am->ep[am->ep0_sub].epnum << 32);
 		msg[1] = 0;
 		am->ep0_sub = apple_iop_mailbox_ep0_next_discovered_ep(am, am->ep0_sub + 1);
-		if(am->ep0_sub == EP_INVALID)
-			am->ep0_state = EP0_WAIT_PWROK;
+		if(am->ep0_sub == EP_INVALID) {
+			if (!am->seen_hello) {
+				am->ep0_state = EP0_DONE;
+				dev_info(am->dev, "completed startup.\n");
+			} else {
+				am->ep0_state = EP0_WAIT_PWROK;
+			}
+		}
 		return 1;
 	case EP0_SEND_PWRACK:
 		msg[0] = 0x00b0000000000000 | am->ep0_sub;
