@@ -264,7 +264,7 @@ static int apple_m1_ans_prepare(struct apple_m1_ans *ans)
 		dev_err(ans->dev, "ANS mailbox startup failed: %d.\n", ret);
 	}
 
-	ret = readl_poll_timeout(ans->nvme + APPLE_BOOT_STATUS, val, (val == APPLE_BOOT_STATUS_OK), 100, 500000);
+	ret = readl_poll_timeout(ans->nvme + APPLE_BOOT_STATUS, val, (val == APPLE_BOOT_STATUS_OK), 100, 5000000);
 	if(ret < 0) {
 		dev_err(ans->dev, "ANS NVMe startup timed out (0x%x).\n", val);
 		return ret;
