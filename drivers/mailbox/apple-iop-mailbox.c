@@ -159,10 +159,9 @@ static int apple_iop_mailbox_ep0_next_a2i(struct apple_iop_mailbox_data *am, u64
 		if(am->ep0_sub == EP_INVALID) {
 			if (!am->seen_hello) {
 				am->ep0_state = EP0_DONE;
-				dev_info(am->dev, "completed startup.\n");
+				dev_info(am->dev, "completed startup (no hello)\n");
 			} else {
 				am->ep0_state = EP0_WAIT_PWROK;
-				dev_info(am->dev, "completed startup.\n");
 			}
 		}
 		return 1;
@@ -170,7 +169,7 @@ static int apple_iop_mailbox_ep0_next_a2i(struct apple_iop_mailbox_data *am, u64
 		msg[0] = 0x00b0000000000000 | am->ep0_sub;
 		msg[1] = 0;
 		am->ep0_state = EP0_DONE;
-		dev_info(am->dev, "completed startup.\n");
+		dev_info(am->dev, "completed startup after hello\n");
 		return 1;
 	}
 }
