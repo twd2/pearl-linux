@@ -270,7 +270,7 @@ static irqreturn_t apple_iop_mailbox_a2i_empty_isr(int irq, void *dev_id)
 		apple_iop_mailbox_mask_a2i_empty(am);
 		if(apple_iop_mailbox_ep0_next_a2i(am, msg)) {
 			if(am->trace)
-				dev_info(am->dev, "tx msg %016llx %16llx\n", msg[0], msg[1]);
+				dev_info_ratelimited(am->dev, "tx msg %016llx %16llx\n", msg[0], msg[1]);
 			am->hwops->a2i_msg(am, msg);
 			apple_iop_mailbox_unmask_a2i_empty(am);
 
@@ -285,7 +285,7 @@ static irqreturn_t apple_iop_mailbox_a2i_empty_isr(int irq, void *dev_id)
 			if(apple_iop_mailbox_a2i_ok(am, ep->epnum)) {
 				list_del(&ep->a2i_list);
 				if(am->trace)
-					dev_info(am->dev, "tx msg %016llx %16llx [%d]\n",
+					dev_info_ratelimited(am->dev, "tx msg %016llx %16llx [%d]\n",
 						 ep->a2i_msg[0], ep->a2i_msg[1], ep->epnum);
 				if(!MSG_INVALID(ep->a2i_msg))
 					am->hwops->a2i_msg(am, ep->a2i_msg);
@@ -306,7 +306,7 @@ static irqreturn_t apple_iop_mailbox_a2i_empty_isr(int irq, void *dev_id)
 
 	if(chan != EP_INVALID && didsomething) {
 		if(am->trace)
-			dev_info(am->dev, "tx complete [%d/%d].\n", am->ep[chan].epnum, chan);
+			dev_info_ratelimited(am->dev, "tx complete [%d/%d].\n", am->ep[chan].epnum, chan);
 		am->ep[chan].a2i_busy = false;
 
 		if(am->ep[chan].builtin)
@@ -337,7 +337,7 @@ static irqreturn_t apple_iop_mailbox_i2a_full_isr(int irq, void *dev_id)
 	am->hwops->i2a_msg(am, msg);
 	epnum = msg[1] & 0xFF;
 	if(am->trace)
-		dev_info(am->dev, "rx msg %016llx %16llx\n", msg[0], msg[1]);
+		dev_info_ratelimited(am->dev, "rx msg %016llx %16llx\n", msg[0], msg[1]);
 
 	if(epnum < am->num_rev_ep)
 		chan = am->rev_ep[epnum];
@@ -349,7 +349,7 @@ static irqreturn_t apple_iop_mailbox_i2a_full_isr(int irq, void *dev_id)
 		stat = am->hwops->a2i_stat(am);
 		while(!am->hwops->a2i_full(stat) && apple_iop_mailbox_ep0_next_a2i(am, msg)) {
 			if(am->trace)
-				dev_info(am->dev, "tx msg %016llx %16llx\n", msg[0], msg[1]);
+				dev_info_ratelimited(am->dev, "tx msg %016llx %16llx\n", msg[0], msg[1]);
 			am->hwops->a2i_msg(am, msg);
 			apple_iop_mailbox_unmask_a2i_empty(am);
 			stat = am->hwops->a2i_stat(am);
@@ -419,7 +419,7 @@ static int apple_iop_mailbox_send_data(struct mbox_chan *chan, void *_msg)
 		stat = am->hwops->a2i_stat(am);
 		if(!am->hwops->a2i_full(stat)) {
 			if(am->trace)
-				dev_info(am->dev, "tx msg %016llx %16llx [%d]\n",
+				dev_info_ratelimited(am->dev, "tx msg %016llx %16llx [%d]\n",
 					 msg[0], msg[1], ep->epnum);
 			am->hwops->a2i_msg(am, msg1);
 			apple_iop_mailbox_unmask_a2i_empty(am);
@@ -475,7 +475,7 @@ static void apple_iop_builtin_work_ep(struct apple_iop_mailbox_data *am, unsigne
 			break;
 		}
 
-		dev_info(am->dev, "allocating %d kB buffer for %s endpoint.\n",
+		dev_info_ratelimited(am->dev, "allocating %d kB buffer for %s endpoint.\n",
 			 (int)(size >> 10), apple_iop_builtin_epname[epnum - 1]);
 		bep->ptr = dma_alloc_coherent(am->dev, size, &bep->dmah, GFP_KERNEL);
 		bep->size = size;
