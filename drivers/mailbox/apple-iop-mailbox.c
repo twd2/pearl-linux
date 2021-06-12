@@ -254,6 +254,7 @@ static irqreturn_t apple_iop_mailbox_a2i_empty_isr(int irq, void *dev_id)
 	u64 msg[2];
 	unsigned chan = EP_INVALID;
 	u32 stat;
+	int didsomething = 0;
 
 	spin_lock_irqsave(&am->lock, flags);
 
@@ -262,6 +263,7 @@ static irqreturn_t apple_iop_mailbox_a2i_empty_isr(int irq, void *dev_id)
 
 	stat = am->hwops->a2i_stat(am);
 	while(!am->hwops->a2i_full(stat)) {
+		didsomething = 1;
 		chan = am->a2i_cur_chan;
 		am->a2i_cur_chan = EP_INVALID;
 
@@ -294,8 +296,6 @@ static irqreturn_t apple_iop_mailbox_a2i_empty_isr(int irq, void *dev_id)
 			break;
 		} else
 			break;
-		if (!irq)
-			break;
 		stat = am->hwops->a2i_stat(am);
 	}
 
@@ -304,7 +304,7 @@ static irqreturn_t apple_iop_mailbox_a2i_empty_isr(int irq, void *dev_id)
 
 	spin_unlock_irqrestore(&am->lock, flags);
 
-	if(chan != EP_INVALID) {
+	if(chan != EP_INVALID && didsomething) {
 		if(am->trace)
 			dev_info(am->dev, "tx complete [%d/%d].\n", am->ep[chan].epnum, chan);
 		am->ep[chan].a2i_busy = false;
@@ -769,7 +769,7 @@ static void poll_timer_fn(struct timer_list *t)
 	if (!am->a2i_empty_masked)
 		apple_iop_mailbox_a2i_empty_isr(0, am);
 	apple_iop_mailbox_i2a_full_isr(0, am);
-	mod_timer(&am->poll_timer, jiffies + 10);
+	mod_timer(&am->poll_timer, jiffies + 1);
 }
 
 static int apple_iop_mailbox_probe(struct platform_device *pdev)
