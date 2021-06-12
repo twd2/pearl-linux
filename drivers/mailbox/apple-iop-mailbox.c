@@ -766,15 +766,10 @@ static const struct of_device_id apple_iop_mailbox_of_match[] = {
 static void poll_timer_fn(struct timer_list *t)
 {
 	struct apple_iop_mailbox_data *am = from_timer(am, t, poll_timer);
-	if (am->a2i_empty_masked) {
-		am->a2i_empty_masked = 0;
+	if (!am->a2i_empty_masked)
 		apple_iop_mailbox_a2i_empty_isr(0, am);
-		am->a2i_empty_masked = 1;
-	} else {
-		apple_iop_mailbox_a2i_empty_isr(0, am);
-	}
 	apple_iop_mailbox_i2a_full_isr(0, am);
-	mod_timer(&am->poll_timer, jiffies + 1);
+	mod_timer(&am->poll_timer, jiffies + 10);
 }
 
 static int apple_iop_mailbox_probe(struct platform_device *pdev)
