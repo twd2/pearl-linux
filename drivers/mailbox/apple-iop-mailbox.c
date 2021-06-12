@@ -161,7 +161,7 @@ static int apple_iop_mailbox_ep0_next_a2i(struct apple_iop_mailbox_data *am, u64
 				am->ep0_state = EP0_DONE;
 				dev_info(am->dev, "completed startup.\n");
 			} else {
-				am->ep0_state = EP0_DONE;
+				am->ep0_state = EP0_WAIT_PWROK;
 				dev_info(am->dev, "completed startup.\n");
 			}
 		}
