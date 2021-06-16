@@ -1041,7 +1041,7 @@ static blk_status_t nvme_map_metadata(struct nvme_dev *dev, struct request *req,
  * NOTE: ns is NULL when called on the admin queue.
  */
 static blk_status_t nvme_queue_rq(struct blk_mq_hw_ctx *hctx,
-			 const struct blk_mq_queue_data *bd)
+				  const struct blk_mq_queue_data *bd)
 {
 	struct nvme_ns *ns = hctx->queue->queuedata;
 	struct nvme_queue *nvmeq = hctx->driver_data;
