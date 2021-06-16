@@ -73,7 +73,6 @@ static void init_irq_stacks(void)
 
 static void default_handle_fiq(struct pt_regs *regs)
 {
-	panic("FIQ taken without a root FIQ handler\n");
 }
 
 void (*handle_arch_fiq)(struct pt_regs *) __ro_after_init = default_handle_fiq;
