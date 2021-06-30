@@ -811,6 +811,7 @@ void apple_aic_cpu_prepare(unsigned int cpu)
 
 static struct gic_kvm_info vgic_info __initdata = {
 	.type			= GIC_V3,
+	.no_maint_irq_mask	= true,
 	.no_hw_deactivation	= true,
 };
 

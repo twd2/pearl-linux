@@ -1071,6 +1071,9 @@ static int kvm_irq_init(struct arch_timer_kvm_info *info)
 	kvm_irq_fixup_flags(host_vtimer_irq, &host_vtimer_irq_flags);
 
 	if (kvm_vgic_global_state.no_hw_deactivation) {
+		struct fwnode_handle *fwnode;
+		struct irq_data *data;
+
 		fwnode = irq_domain_alloc_named_fwnode("kvm-timer");
 		if (!fwnode)
 			return -ENOMEM;

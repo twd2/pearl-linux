@@ -4,8 +4,8 @@
  *
  * Copyright (C) 2016 ARM Limited, All Rights Reserved.
  */
-#ifndef __ARM_VGIC_INFO_H
-#define __ARM_VGIC_INFO_H
+#ifndef __LINUX_IRQCHIP_ARM_VGIC_INFO_H
+#define __LINUX_IRQCHIP_ARM_VGIC_INFO_H
 
 #include <linux/types.h>
 #include <linux/ioport.h>
@@ -24,6 +24,8 @@ struct gic_kvm_info {
 	struct resource vcpu;
 	/* Interrupt number */
 	unsigned int	maint_irq;
+	/* No interrupt mask, no need to use the above field */
+	bool		no_maint_irq_mask;
 	/* Virtual control interface */
 	struct resource vctrl;
 	/* vlpi support */
