@@ -533,6 +533,7 @@ int kvm_vgic_hyp_init(void)
 		kvm_info("Non-architectural vgic, tainting kernel\n");
 		add_taint(TAINT_CPU_OUT_OF_SPEC, LOCKDEP_STILL_OK);
 		kvm_vgic_global_state.no_hw_deactivation = true;
+	}
 	has_mask = !gic_kvm_info->no_maint_irq_mask;
 
 	if (has_mask && !gic_kvm_info->maint_irq) {
