@@ -245,6 +245,49 @@ static int orangefs_writepages(struct address_space *mapping,
 
 static int orangefs_launder_page(struct page *);
 
+static void orangefs_readahead(struct readahead_control *rac)
+{
+	loff_t offset;
+	struct iov_iter iter;
+	struct inode *inode = rac->mapping->host;
+	struct xarray *i_pages;
+	struct page *page;
+	loff_t new_start = readahead_pos(rac);
+	int ret;
+	size_t new_len = 0;
+
+	loff_t bytes_remaining = inode->i_size - readahead_pos(rac);
+	loff_t pages_remaining = bytes_remaining / PAGE_SIZE;
+
+	if (pages_remaining >= 1024)
+		new_len = 4194304;
+	else if (pages_remaining > readahead_count(rac))
+		new_len = bytes_remaining;
+
+	if (new_len)
+		readahead_expand(rac, new_start, new_len);
+
+	offset = readahead_pos(rac);
+	i_pages = &rac->mapping->i_pages;
+
+	iov_iter_xarray(&iter, READ, i_pages, offset, readahead_length(rac));
+
+	/* read in the pages. */
+	if ((ret = wait_for_direct_io(ORANGEFS_IO_READ, inode,
+			&offset, &iter, readahead_length(rac),
+			inode->i_size, NULL, NULL, rac->file)) < 0)
+		gossip_debug(GOSSIP_FILE_DEBUG,
+			"%s: wait_for_direct_io failed. \n", __func__);
+	else
+		ret = 0;
+
+	/* clean up. */
+	while ((page = readahead_page(rac))) {
+		page_endio(page, false, ret);
+		put_page(page);
+	}
+}
+
 static int orangefs_readpage(struct file *file, struct page *page)
 {
 	struct inode *inode = page->mapping->host;
