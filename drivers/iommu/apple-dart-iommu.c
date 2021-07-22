@@ -1038,6 +1038,8 @@ static void apple_dart_shutdown(struct platform_device *pdev)
 
 static const struct of_device_id apple_dart_of_match[] = {
 	{ .compatible = "apple,t8103-dart", .data = NULL },
+	{ .compatible = "apple,dart-m1",    .data = NULL },
+	{ .compatible = "apple,dart",       .data = NULL },
 	{},
 };
 MODULE_DEVICE_TABLE(of, apple_dart_of_match);
