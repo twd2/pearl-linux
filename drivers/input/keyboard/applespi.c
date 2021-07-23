@@ -1567,10 +1567,10 @@ static void applespi_got_data(struct applespi_data *applespi)
 		goto msg_complete;
 
 	if (le16_to_cpu(message->length) != msg_len - MSG_HEADER_SIZE - 2) {
-		dev_warn_ratelimited(&applespi->spi->dev,
+		/*dev_warn_ratelimited(&applespi->spi->dev,
 				     "Received corrupted packet (invalid message length %u - expected %u)\n",
 				     le16_to_cpu(message->length),
-				     msg_len - MSG_HEADER_SIZE - 2);
+				     msg_len - MSG_HEADER_SIZE - 2);*/
 		goto msg_complete;
 	}
 
