@@ -349,8 +349,6 @@ static int decode_percentage_float(u32 f)
 {
 	u32 exp = f >> 23;
 	u32 mantissa = f & ((1 << 23) - 1);
-	if (mantissa == 0)
-		return 0;
 	mantissa += (1 << 23);
 	int ret = mantissa;
 	mantissa >>= 17 + (0x85 - exp);
