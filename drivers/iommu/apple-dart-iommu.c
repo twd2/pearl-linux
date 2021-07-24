@@ -929,6 +929,8 @@ static int apple_dart_probe(struct platform_device *pdev)
 	struct apple_dart *dart;
 	struct device *dev = &pdev->dev;
 
+	dev_info(dev, "DART initializing\n");
+
 	dart = devm_kzalloc(dev, sizeof(*dart), GFP_KERNEL);
 	if (!dart)
 		return -ENOMEM;
