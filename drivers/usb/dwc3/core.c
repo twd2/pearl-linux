@@ -1546,7 +1546,7 @@ static int dwc3_probe(struct platform_device *pdev)
 
 	dwc3_get_properties(dwc);
 
-        ret = dma_set_mask_and_coherent(dev, DMA_BIT_MASK(dwc->dma_mask_bits));
+	ret = dma_set_mask_and_coherent(dev, DMA_BIT_MASK(64));
 	if (ret)
 		return ret;
 
@@ -1578,7 +1578,9 @@ static int dwc3_probe(struct platform_device *pdev)
 		goto assert_reset;
 
 	if (!dwc3_core_is_valid(dwc)) {
-		printk("doesn't appear to be valid, continuing ...");
+		dev_err(dwc->dev, "this is not a DesignWare USB3 DRD Core\n");
+		// ret = -ENODEV;
+		// goto disable_clks;
 	}
 
 	platform_set_drvdata(pdev, dwc);
